@@ -157,10 +157,8 @@ export default function InboxPage() {
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Top bar */}
       <header className="h-14 flex items-center gap-4 px-3 border-b border-black/5 bg-white shrink-0">
-        <div className="flex items-center gap-2 w-48">
-          <div className="w-9 h-9 rounded-full bg-[#1a73e8] flex items-center justify-center">
-            <Mail className="w-5 h-5 text-white" />
-          </div>
+        <div className="flex items-center gap-2.5 w-52">
+          <img src="/logo.png" alt="Unity Email" className="w-9 h-9 object-contain" />
           <span className="font-medium text-[22px] text-[#5f6368] tracking-tight">Unity</span>
         </div>
         <div className="flex-1 max-w-2xl">

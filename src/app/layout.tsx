@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Unity Inbox",
   description: "Shared team inbox — send & receive",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/logo.png",
   },
 };
 
