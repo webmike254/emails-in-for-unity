@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   Mail, PenSquare, Inbox, Star, Send, Archive, Search,
-  Loader2, CheckCircle2, AlertCircle, User, ChevronRight, X, RefreshCw
+  Loader2, CheckCircle2, AlertCircle, User, ChevronRight, X, RefreshCw, Briefcase
 } from 'lucide-react'
 
 type Member = { id: string; name: string; email: string; role: string; color: string }
@@ -47,11 +47,12 @@ function buildHtml(body: string, sender: typeof SENDERS[0]) {
 }
 
 export default function InboxPage() {
-  const [folder, setFolder] = useState<'inbox' | 'sent' | 'starred'>('inbox')
+  const [folder, setFolder] = useState<'inbox' | 'sent' | 'starred' | 'applications'>('inbox')
   const [threads, setThreads] = useState<Thread[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [selected, setSelected] = useState<Thread | null>(null)
   const [loading, setLoading] = useState(true)
+  const [applications, setApplications] = useState<any[]>([])
   const [composeOpen, setComposeOpen] = useState(false)
   const [me, setMe] = useState<Member | null>(null)
 
@@ -68,17 +69,20 @@ export default function InboxPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [tRes, mRes] = await Promise.all([
-        fetch(`/api/threads?folder=${folder}`),
+      const [tRes, mRes, aRes] = await Promise.all([
+        fetch(`/api/threads?folder=${folder === 'applications' ? 'inbox' : folder}`),
         fetch('/api/team'),
+        fetch('/api/applications'),
       ])
       const tData = await tRes.json()
       const mData = await mRes.json()
+      const aData = await aRes.json()
       if (tData.threads) setThreads(tData.threads)
       if (mData.members) {
         setMembers(mData.members)
         if (!me && mData.members.length) setMe(mData.members[0])
       }
+      if (aData.applications) setApplications(aData.applications)
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }, [folder, me])
@@ -151,6 +155,7 @@ export default function InboxPage() {
     { id: 'inbox' as const, label: 'Inbox', icon: Inbox },
     { id: 'starred' as const, label: 'Starred', icon: Star },
     { id: 'sent' as const, label: 'Sent', icon: Send },
+    { id: 'applications' as const, label: 'Applications', icon: Briefcase },
   ]
 
   return (
@@ -226,11 +231,50 @@ export default function InboxPage() {
         <section className={`flex flex-col bg-white border-l border-black/5 ${selected ? 'w-[380px]' : 'flex-1'} shrink-0 overflow-hidden`}>
           <div className="h-12 flex items-center px-4 border-b border-black/5 text-[13px] text-[#5f6368]">
             {folder.charAt(0).toUpperCase() + folder.slice(1)}
-            <span className="ml-2 text-[#1a73e8]">{threads.length}</span>
+            <span className="ml-2 text-[#1a73e8]">{folder === 'applications' ? applications.length : threads.length}</span>
+            {folder === 'applications' && (
+              <a href="/apply" target="_blank" className="ml-auto text-[#1a73e8] text-[12px] font-medium hover:underline">Open form →</a>
+            )}
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[#5f6368]" /></div>
+            ) : folder === 'applications' ? (
+              applications.length === 0 ? (
+                <div className="p-10 text-center text-[#5f6368] text-[14px]">
+                  No applications yet.<br/>
+                  <a href="/apply" className="text-[#1a73e8] underline mt-2 inline-block">Open application form</a>
+                </div>
+              ) : (
+                applications.map((app: any) => (
+                  <div key={app.id} className="w-full text-left px-4 py-3 border-b border-black/5 hover:bg-[#f8f9fa]">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className={`text-[14px] truncate ${!app.is_read ? 'font-bold' : ''}`}>{app.name}</p>
+                        <p className="text-[13px] text-[#5f6368] truncate">{app.position || app.kind} · {app.email}</p>
+                        <p className="text-[12px] text-[#5f6368] truncate mt-0.5">{app.message}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-[11px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">{app.status}</span>
+                        <p className="text-[11px] text-[#5f6368] mt-1">{new Date(app.created_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        className="text-[12px] text-[#1a73e8] font-medium"
+                        onClick={async () => {
+                          setToEmail(app.email); setToName(app.name);
+                          setSubject(`Re: Your application${app.position ? ' — ' + app.position : ''}`);
+                          setComposeOpen(true); setReplyMode(false);
+                          await fetch('/api/applications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: app.id, is_read: true, status: 'reviewing' }) });
+                          load();
+                        }}
+                      >Reply</button>
+                    </div>
+                  </div>
+                ))
+              )
             ) : threads.length === 0 ? (
               <div className="p-10 text-center text-[#5f6368] text-[14px]">No messages in {folder}</div>
             ) : (
