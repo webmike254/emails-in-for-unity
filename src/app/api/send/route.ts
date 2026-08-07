@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendEmail } from '@/lib/mailersend'
+import { sendEmail, plainTextToHtml } from '@/lib/mailersend'
+import { buildPromotionalEmail } from '@/lib/email-template'
 import { getServiceSupabase } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
@@ -13,13 +14,30 @@ export async function POST(req: NextRequest) {
       subject,
       html,
       text,
+      plainBody,
       threadId,
       sentBy,
+      title = 'Team',
+      ctaUrl,
+      ctaLabel,
+      attachments,
     } = body
 
-    if (!toEmail || !subject || !html) {
-      return NextResponse.json({ error: 'toEmail, subject, html required' }, { status: 400 })
+    if (!toEmail || !subject) {
+      return NextResponse.json({ error: 'toEmail and subject required' }, { status: 400 })
     }
+
+    const bodyHtml =
+      html ||
+      plainTextToHtml(plainBody || text || '')
+
+    const finalHtml = buildPromotionalEmail({
+      bodyHtml,
+      sender: { email: fromEmail, name: fromName, title },
+      ctaUrl: ctaUrl || 'https://www.unity-software.online',
+      ctaLabel: ctaLabel || 'Visit Unity Software',
+      preheader: subject,
+    })
 
     const result = await sendEmail({
       fromEmail,
@@ -27,11 +45,13 @@ export async function POST(req: NextRequest) {
       toEmail,
       toName,
       subject,
-      html,
-      text,
+      html: finalHtml,
+      text: plainBody || text || bodyHtml.replace(/<[^>]+>/g, ' '),
       replyToEmail: fromEmail,
       replyToName: fromName,
+      attachments: attachments || undefined,
     })
+
     const sb = getServiceSupabase()
 
     let tid = threadId
@@ -40,7 +60,7 @@ export async function POST(req: NextRequest) {
         .from('threads')
         .insert({
           subject,
-          snippet: (text || html.replace(/<[^>]+>/g, ' ')).slice(0, 120),
+          snippet: (plainBody || text || '').slice(0, 120),
           last_message_at: new Date().toISOString(),
         })
         .select()
@@ -48,7 +68,13 @@ export async function POST(req: NextRequest) {
       if (te) throw te
       tid = thread.id
     } else {
-      await sb.from('threads').update({ last_message_at: new Date().toISOString(), snippet: (text || '').slice(0, 120) }).eq('id', tid)
+      await sb
+        .from('threads')
+        .update({
+          last_message_at: new Date().toISOString(),
+          snippet: (plainBody || text || '').slice(0, 120),
+        })
+        .eq('id', tid)
     }
 
     const { data: msg, error: me } = await sb
@@ -62,8 +88,8 @@ export async function POST(req: NextRequest) {
         to_email: toEmail,
         to_name: toName || null,
         subject,
-        body_html: html,
-        body_text: text || null,
+        body_html: finalHtml,
+        body_text: plainBody || text || null,
         status: 'sent',
         is_read: true,
         sent_by: sentBy || null,

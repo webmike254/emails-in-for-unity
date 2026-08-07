@@ -2,7 +2,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { buildPromotionalEmail } from '@/lib/email-template'
 import {
   Mail, PenSquare, Inbox, Star, Send, Archive, Search,
   Loader2, CheckCircle2, AlertCircle, User, ChevronRight, X, RefreshCw, Briefcase
@@ -47,12 +46,16 @@ export default function InboxPage() {
   const [toEmail, setToEmail] = useState('')
   const [toName, setToName] = useState('')
   const [subject, setSubject] = useState('')
-  const [body, setBody] = useState(`<p style="margin:0 0 16px 0;">Dear colleague,</p>
-<p style="margin:0 0 16px 0;">We are writing from <strong>Unity Software</strong> regarding an update we would like to share with you.</p>
-<p style="margin:0 0 16px 0;">Our team continues to support logistics and supply-chain partners across Kenya with reliable software and service.</p>
-<p style="margin:0;">We would be glad to continue the conversation — reply to this email or use the button below.</p>`)
+  const [body, setBody] = useState(`Dear colleague,
+
+Thank you for connecting with Unity Software.
+
+Please let us know if you have any questions — we are happy to help.
+
+Kind regards`)
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState<{ok?:boolean;error?:string}|null>(null)
+  const [attachFile, setAttachFile] = useState<File | null>(null)
   const [replyMode, setReplyMode] = useState(false)
 
   const load = useCallback(async () => {
@@ -115,13 +118,14 @@ export default function InboxPage() {
     setSendResult(null)
     try {
       const displayName = (customFromName || sender.name).trim() || sender.name
-      const html = buildPromotionalEmail({
-        bodyHtml: body,
-        sender: { email: sender.email, name: displayName, title: sender.title },
-        ctaUrl: 'https://www.unity-software.online',
-        ctaLabel: 'Visit Unity Software',
-        preheader: subject || 'Message from Unity Software',
-      })
+      let attachments: { content: string; filename: string }[] | undefined
+      if (attachFile) {
+        const buf = await attachFile.arrayBuffer()
+        const bytes = new Uint8Array(buf)
+        let binary = ''
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+        attachments = [{ content: btoa(binary), filename: attachFile.name }]
+      }
       const res = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,16 +134,20 @@ export default function InboxPage() {
           fromName: displayName,
           toEmail,
           toName: toName || undefined,
-          subject: replyMode && selected ? `Re: ${selected.subject.replace(/^re:\s*/i,'')}` : subject,
-          html,
+          subject: replyMode && selected ? ('Re: ' + selected.subject.replace(/^re:\s*/i, '')) : subject,
+          plainBody: body,
+          title: sender.title,
           threadId: replyMode && selected ? selected.id : undefined,
           sentBy: me?.id,
+          attachments,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed')
       setSendResult({ ok: true })
       setToEmail(''); setToName(''); setSubject('')
+      setBody('Dear colleague,\n\nThank you for connecting with Unity Software.\n\nPlease let us know if you have any questions — we are happy to help.\n\nKind regards')
+      setAttachFile(null)
       setComposeOpen(false); setReplyMode(false)
       load()
     } catch (err: any) {
@@ -154,7 +162,7 @@ export default function InboxPage() {
     setToEmail(lastInbound?.from_email || '')
     setToName(lastInbound?.from_name || '')
     setSubject(`Re: ${thread.subject.replace(/^re:\s*/i, '')}`)
-    setBody('<p style="margin:0 0 16px;font-size:16px;line-height:1.65;color:#374151;"></p>')
+    setBody('')
     setReplyMode(true)
     setSelected(thread)
     setComposeOpen(true)
@@ -478,12 +486,29 @@ export default function InboxPage() {
               )}
               <textarea
                 required
-                rows={10}
+                rows={12}
                 value={body}
                 onChange={e => setBody(e.target.value)}
-                className="w-full text-[14px] outline-none resize-none font-mono leading-relaxed"
-                placeholder="Write your message (HTML ok)…"
+                className="w-full text-[15px] outline-none resize-none leading-relaxed"
+                placeholder="Write normally. Blank line = new paragraph."
               />
+              <div className="flex items-center gap-3 pt-1">
+                <label className="text-[13px] text-[#5f6368] cursor-pointer inline-flex items-center gap-1.5 hover:text-[#1a73e8]">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
+                    className="hidden"
+                    onChange={e => setAttachFile(e.target.files?.[0] || null)}
+                  />
+                  Attach PDF / file
+                </label>
+                {attachFile && (
+                  <span className="text-[12px] text-[#1a73e8] truncate max-w-[200px]">
+                    {attachFile.name}
+                    <button type="button" className="ml-2 text-red-600" onClick={() => setAttachFile(null)}>remove</button>
+                  </span>
+                )}
+              </div>
               {sendResult && (
                 <div className={`flex items-center gap-2 text-[13px] ${sendResult.ok ? 'text-emerald-700' : 'text-red-700'}`}>
                   {sendResult.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}

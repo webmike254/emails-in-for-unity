@@ -1,5 +1,11 @@
 const API = 'https://api.mailersend.com/v1'
 
+export type Attachment = {
+  content: string // base64
+  filename: string
+  disposition?: 'attachment' | 'inline'
+}
+
 export type SendPayload = {
   fromEmail: string
   fromName: string
@@ -10,6 +16,7 @@ export type SendPayload = {
   text?: string
   replyToEmail?: string
   replyToName?: string
+  attachments?: Attachment[]
 }
 
 export async function sendEmail(payload: SendPayload) {
@@ -22,11 +29,19 @@ export async function sendEmail(payload: SendPayload) {
     subject: payload.subject,
     html: payload.html,
     text: payload.text || payload.html.replace(/<[^>]+>/g, ' ').slice(0, 5000),
+    reply_to: {
+      email: payload.replyToEmail || payload.fromEmail,
+      name: payload.replyToName || payload.fromName,
+    },
   }
 
-  const replyEmail = payload.replyToEmail || payload.fromEmail
-  const replyName = payload.replyToName || payload.fromName
-  body.reply_to = { email: replyEmail, name: replyName }
+  if (payload.attachments?.length) {
+    body.attachments = payload.attachments.map((a) => ({
+      content: a.content,
+      filename: a.filename,
+      disposition: a.disposition || 'attachment',
+    }))
+  }
 
   const res = await fetch(`${API}/email`, {
     method: 'POST',
@@ -45,4 +60,22 @@ export async function sendEmail(payload: SendPayload) {
 
   const messageId = res.headers.get('x-message-id') || res.headers.get('X-Message-Id')
   return { messageId, status: res.status }
+}
+
+/** Plain text → simple email paragraphs */
+export function plainTextToHtml(text: string): string {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  const parts = escaped.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+  if (!parts.length) {
+    return '<p style="margin:0 0 16px 0;font-size:16px;line-height:1.65;color:#1f2937;"></p>'
+  }
+  return parts
+    .map((p) => {
+      const withBreaks = p.replace(/\n/g, '<br />')
+      return `<p style="margin:0 0 16px 0;font-size:16px;line-height:1.65;color:#1f2937;">${withBreaks}</p>`
+    })
+    .join('\n')
 }
