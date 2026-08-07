@@ -43,6 +43,7 @@ export default function InboxPage() {
 
   // compose state
   const [sender, setSender] = useState(SENDERS[0])
+  const [customFromName, setCustomFromName] = useState(SENDERS[0].name)
   const [toEmail, setToEmail] = useState('')
   const [toName, setToName] = useState('')
   const [subject, setSubject] = useState('')
@@ -83,7 +84,7 @@ export default function InboxPage() {
         setAuthed(true)
         setLoginEmail(parsed.email)
         const match = SENDERS.find(s => s.email === parsed.email)
-        if (match) setSender(match)
+        if (match) { setSender(match); setCustomFromName(match.name) }
       }
     } catch {}
   }, [])
@@ -113,9 +114,10 @@ export default function InboxPage() {
     setSending(true)
     setSendResult(null)
     try {
+      const displayName = (customFromName || sender.name).trim() || sender.name
       const html = buildPromotionalEmail({
         bodyHtml: body,
-        sender: { email: sender.email, name: sender.name, title: sender.title },
+        sender: { email: sender.email, name: displayName, title: sender.title },
         ctaUrl: 'https://www.unity-software.online',
         ctaLabel: 'Visit Unity Software',
         preheader: subject || 'Message from Unity Software',
@@ -125,7 +127,7 @@ export default function InboxPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fromEmail: sender.email,
-          fromName: sender.name,
+          fromName: displayName,
           toEmail,
           toName: toName || undefined,
           subject: replyMode && selected ? `Re: ${selected.subject.replace(/^re:\s*/i,'')}` : subject,
@@ -180,6 +182,7 @@ export default function InboxPage() {
     }
     const match = SENDERS.find(s => s.email === loginEmail)!
     setSender(match)
+    setCustomFromName(match.name)
     setAuthed(true)
     localStorage.setItem('unity_inbox_user', JSON.stringify({ email: loginEmail, name: match.name }))
   }
@@ -437,9 +440,27 @@ export default function InboxPage() {
             <div className="p-4 space-y-3 overflow-y-auto flex-1">
               <div className="flex items-center gap-2 border-b border-black/5 pb-2">
                 <span className="text-[13px] text-[#5f6368] w-12">From</span>
-                <select value={sender.email} onChange={e => setSender(SENDERS.find(s => s.email === e.target.value)!)} className="flex-1 text-[14px] outline-none bg-transparent">
-                  {SENDERS.map(s => <option key={s.email} value={s.email}>{s.name} ({s.email})</option>)}
+                <select
+                  value={sender.email}
+                  onChange={e => {
+                    const s = SENDERS.find(x => x.email === e.target.value)!
+                    setSender(s)
+                    setCustomFromName(s.name)
+                  }}
+                  className="flex-1 text-[14px] outline-none bg-transparent"
+                >
+                  {SENDERS.map(s => <option key={s.email} value={s.email}>{s.email}</option>)}
                 </select>
+              </div>
+              <div className="flex items-center gap-2 border-b border-black/5 pb-2">
+                <span className="text-[13px] text-[#5f6368] w-12">Name</span>
+                <input
+                  type="text"
+                  value={customFromName}
+                  onChange={e => setCustomFromName(e.target.value)}
+                  placeholder="e.g. Amara Njoroge"
+                  className="flex-1 text-[14px] outline-none"
+                />
               </div>
               <div className="flex items-center gap-2 border-b border-black/5 pb-2">
                 <span className="text-[13px] text-[#5f6368] w-12">To</span>
