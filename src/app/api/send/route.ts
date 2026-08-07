@@ -21,7 +21,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'toEmail, subject, html required' }, { status: 400 })
     }
 
-    const result = await sendEmail({ fromEmail, fromName, toEmail, toName, subject, html, text })
+    const result = await sendEmail({
+      fromEmail,
+      fromName,
+      toEmail,
+      toName,
+      subject,
+      html,
+      text,
+      replyToEmail: fromEmail,
+      replyToName: fromName,
+    })
     const sb = getServiceSupabase()
 
     let tid = threadId

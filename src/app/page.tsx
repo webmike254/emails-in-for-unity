@@ -2,6 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { buildPromotionalEmail } from '@/lib/email-template'
 import {
   Mail, PenSquare, Inbox, Star, Send, Archive, Search,
   Loader2, CheckCircle2, AlertCircle, User, ChevronRight, X, RefreshCw, Briefcase
@@ -26,32 +27,16 @@ const SENDERS = [
   { email: 'hello@unity-software.online', name: 'Unity Software', title: 'General' },
 ]
 
-function buildHtml(body: string, sender: typeof SENDERS[0]) {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;max-width:600px;">
-<tr><td style="padding:0;line-height:0;"><img src="https://emails-in-for-unitys.vercel.app/header.jpg" alt="Unity Software" width="600" style="display:block;width:100%;max-width:600px;height:auto;" /></td></tr>
-<tr><td style="padding:40px 40px 24px;">${body}<div style="height:3px;width:48px;background:#f59e0b;border-radius:2px;margin:28px 0;"></div>
-<p style="margin:0 0 4px;font-size:16px;color:#374151;">Kind regards,</p></td></tr>
-<tr><td style="padding:0 40px 36px;">
-<p style="margin:0 0 2px;font-size:16px;font-weight:600;color:#111827;">${sender.name}</p>
-<p style="margin:0 0 6px;font-size:13px;color:#6b7280;font-weight:500;">${sender.title} · Unity Software</p>
-<p style="margin:0;font-size:13px;line-height:1.5;color:#6b7280;">+254 778 903 044<br>
-<a href="mailto:${sender.email}" style="color:#6b7280;text-decoration:none;">${sender.email}</a></p>
-</td></tr>
-<tr><td style="background:#111827;padding:28px 40px;">
-<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#f9fafb;">UNITY SOFTWARE</p>
-<p style="margin:0;font-size:12px;color:#9ca3af;"><a href="https://www.unity-software.online" style="color:#f59e0b;text-decoration:none;">www.unity-software.online</a></p>
-</td></tr></table></td></tr></table></body></html>`
-}
-
 export default function InboxPage() {
   const [folder, setFolder] = useState<'inbox' | 'sent' | 'starred' | 'applications'>('inbox')
   const [threads, setThreads] = useState<Thread[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [selected, setSelected] = useState<Thread | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authed, setAuthed] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('hr@unity-software.online')
+  const [loginPass, setLoginPass] = useState('')
+  const [loginError, setLoginError] = useState('')
   const [applications, setApplications] = useState<any[]>([])
   const [composeOpen, setComposeOpen] = useState(false)
   const [me, setMe] = useState<Member | null>(null)
@@ -61,7 +46,10 @@ export default function InboxPage() {
   const [toEmail, setToEmail] = useState('')
   const [toName, setToName] = useState('')
   const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('<p style="margin:0 0 16px;font-size:16px;line-height:1.65;color:#374151;">Hello,</p>')
+  const [body, setBody] = useState(`<p style="margin:0 0 16px 0;">Dear colleague,</p>
+<p style="margin:0 0 16px 0;">We are writing from <strong>Unity Software</strong> regarding an update we would like to share with you.</p>
+<p style="margin:0 0 16px 0;">Our team continues to support logistics and supply-chain partners across Kenya with reliable software and service.</p>
+<p style="margin:0;">We would be glad to continue the conversation — reply to this email or use the button below.</p>`)
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState<{ok?:boolean;error?:string}|null>(null)
   const [replyMode, setReplyMode] = useState(false)
@@ -87,7 +75,20 @@ export default function InboxPage() {
     finally { setLoading(false) }
   }, [folder, me])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('unity_inbox_user')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setAuthed(true)
+        setLoginEmail(parsed.email)
+        const match = SENDERS.find(s => s.email === parsed.email)
+        if (match) setSender(match)
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => { if (authed) load() }, [load, authed])
 
   async function assign(threadId: string, memberId: string | null) {
     await fetch('/api/threads', {
@@ -112,7 +113,13 @@ export default function InboxPage() {
     setSending(true)
     setSendResult(null)
     try {
-      const html = buildHtml(body, sender)
+      const html = buildPromotionalEmail({
+        bodyHtml: body,
+        sender: { email: sender.email, name: sender.name, title: sender.title },
+        ctaUrl: 'https://www.unity-software.online',
+        ctaLabel: 'Visit Unity Software',
+        preheader: subject || 'Message from Unity Software',
+      })
       const res = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -157,6 +164,54 @@ export default function InboxPage() {
     { id: 'sent' as const, label: 'Sent', icon: Send },
     { id: 'applications' as const, label: 'Applications', icon: Briefcase },
   ]
+
+
+  function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoginError('')
+    const allowed = SENDERS.map(s => s.email)
+    if (!allowed.includes(loginEmail)) {
+      setLoginError('Use your department email (hr, hiring, director, or hello).')
+      return
+    }
+    if (loginPass !== 'mike@2026#') {
+      setLoginError('Wrong password.')
+      return
+    }
+    const match = SENDERS.find(s => s.email === loginEmail)!
+    setSender(match)
+    setAuthed(true)
+    localStorage.setItem('unity_inbox_user', JSON.stringify({ email: loginEmail, name: match.name }))
+  }
+
+  if (!authed) {
+    return (
+      <div className="min-h-screen bg-[#f6f8fc] flex items-center justify-center p-4">
+        <form onSubmit={handleLogin} className="w-full max-w-sm bg-white rounded-2xl border border-black/5 shadow-sm p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <img src="/logo.png" alt="" className="w-10 h-10 object-contain" />
+            <div>
+              <h1 className="font-semibold text-[18px] tracking-tight">Unity Inbox</h1>
+              <p className="text-[12px] text-[#5f6368]">Sign in with your department email</p>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[12px] font-medium text-[#5f6368] mb-1">Department email</label>
+            <select value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="w-full h-11 px-3 rounded-xl border border-black/10 bg-[#fafafa] text-[14px]">
+              {SENDERS.map(s => <option key={s.email} value={s.email}>{s.name} — {s.email}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[12px] font-medium text-[#5f6368] mb-1">Password</label>
+            <input type="password" required value={loginPass} onChange={e => setLoginPass(e.target.value)} className="w-full h-11 px-3 rounded-xl border border-black/10 bg-[#fafafa] text-[14px]" placeholder="••••••••" />
+          </div>
+          {loginError && <p className="text-[13px] text-red-600">{loginError}</p>}
+          <button type="submit" className="w-full h-11 rounded-full bg-[#0b57d0] text-white text-[14px] font-medium">Sign in</button>
+          <p className="text-[11px] text-[#5f6368] text-center">HR · Hiring · Director · General</p>
+        </form>
+      </div>
+    )
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
