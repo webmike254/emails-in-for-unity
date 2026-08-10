@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unity Software — Email System</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card: #ffffff;
+      --text: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --accent: #f59e0b;
+      --border: rgba(0,0,0,0.06);
+      --radius: 16px;
+      --ok: #16a34a;
+      --err: #dc2626;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: 1160px; margin: 0 auto; padding: 48px 24px 80px; }
+    header { margin-bottom: 40px; }
+    header h1 { font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; margin-bottom: 8px; }
+    header p { font-size: 1.0625rem; color: var(--text-secondary); max-width: 40rem; }
+    h2 { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .section { margin-bottom: 48px; }
+    .section > p.sub { color: var(--text-secondary); font-size: 0.95rem; max-width: 44rem; margin-bottom: 20px; }
+    .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 26px; }
+    .compose-grid { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 24px; }
+    @media (max-width: 860px) { .compose-grid { grid-template-columns: 1fr; } }
+    label { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); margin: 14px 0 6px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+    input, select {
+      width: 100%; padding: 10px 12px; font: inherit; font-size: 0.9375rem;
+      border: 1px solid #d4d4d8; border-radius: 10px; background: #fff; color: var(--text); outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 18px; font-size: 0.9375rem; font-weight: 600; border: none; border-radius: 980px;
+      background: var(--accent); color: #1d1d1f; cursor: pointer; transition: filter .15s ease;
+    }
+    .btn:hover { filter: brightness(1.05); }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    #result { margin-top: 18px; font-size: 0.875rem; border-radius: 12px; padding: 12px 14px; display: none; }
+    #result.ok { display: block; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    #result.err { display: block; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    pre { background: #18181b; color: #fafafa; border-radius: 12px; padding: 16px; font-size: 0.8125rem; overflow: auto; line-height: 1.55; }
+    .meta { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 14px; font-size: 0.875rem; color: var(--text-secondary); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 22px; }
+    .tcard { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; transition: transform .25s ease; }
+    .tcard:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+    .tcard .thumb { height: 140px; background: #fafafa; border-bottom: 1px solid var(--border); overflow: hidden; }
+    .tcard .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .tcard .body { padding: 18px 20px 20px; }
+    .tcard h3 { font-size: 1rem; margin-bottom: 2px; }
+    .tcard .role { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 10px; }
+    .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .a { font-size: 0.8125rem; padding: 7px 14px; border-radius: 980px; text-decoration: none; border: 1px solid var(--border); background: #fff; color: var(--text); }
+    .a.primary { background: var(--accent); border-color: transparent; font-weight: 600; }
+    .kbd { background: #18181b; color: #fafafa; padding: 1px 7px; border-radius: 6px; font-size: 0.8125rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    #status { font-size: 0.8125rem; margin-top: 12px; color: var(--text-secondary); }
+    #status .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #a1a1aa; margin-right: 6px; }
+    #status .dot.up { background: var(--ok); }
+    #status .dot.down { background: var(--err); }
+    footer { border-top: 1px solid var(--border); padding-top: 28px; color: var(--text-secondary); font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Unity Software — Email System</h1>
+      <p>Send branded congratulatory emails from any role, and receive replies via inbound routing. Powered by Mailjet, hosted on Vercel, assets on Cloudflare.</p>
+      <div class="meta">
+        <span><b>Send:</b> /api/send</span>
+        <span><b>Receive:</b> /api/inbound</span>
+        <span><b>Status:</b> /api/health</span>
+      </div>
+      <div id="status"><span class="dot"></span>Checking service…</div>
+    </header>
+    
+<section class="section">
+      <h2>Send a test email</h2>
+      <p class="sub">Pick a template, enter the recipient, and the API will fill the placeholders and deliver it via Mailjet from the matching sender on <b>unity-software.online</b>.</p>
+      <div class="compose-grid">
+        <div class="card">
+          <div class="row">
+            <div>
+              <label for="template">Template</label>
+              <select id="template">
+                <option value="hr">HR Manager — Congratulations</option>
+                <option value="hiring">Hiring Manager — Welcome aboard</option>
+                <option value="director">Director — Personal congratulations</option>
+                <option value="generic" selected>Generic — placeholders</option>
+              </select>
+            </div>
+            <div>
+              <label for="fromSel">Send as</label>
+              <select id="fromSel">
+                <option value="default" selected>Template default</option>
+                <option value="hr@unity-software.online">hr@unity-software.online</option>
+                <option value="hiring@unity-software.online">hiring@unity-software.online</option>
+                <option value="director@unity-software.online">director@unity-software.online</option>
+                <option value="hello@unity-software.online">hello@unity-software.online</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="to">To</label>
+              <input id="to" type="email" placeholder="name@example.com">
+            </div>
+            <div>
+              <label for="toName">Recipient name</label>
+              <input id="toName" type="text" placeholder="Jane Doe">
+            </div>
+          </div>
+          <label for="subject">Subject <span style="font-weight:400; color:var(--text-secondary);">(optional — overrides template)</span></label>
+          <input id="subject" type="text" placeholder="Leave blank for the template default">
+          <div style="margin-top:22px;">
+            <button class="btn" id="sendBtn">Send email</button>
+          </div>
+          <div id="result"></div>
+        </div>
+        <div class="card">
+          <h3>API use</h3>
+          <p style="font-size:0.875rem; color:var(--text-secondary); margin:8px 0 12px;">Direct curl usage — the form posts exactly this payload.</p>
+          <pre>curl -X POST /api/send \
+  -H "Content-Type: application/json" \
+  -d '{"template":"hr","to":"name@example.com","toName":"Jane"}'</pre>
+          <ul style="font-size:0.85rem; color:var(--text-secondary); margin:12px 0 0 18px; padding:0;">
+            <li style="margin-bottom:4px;"><span class="kbd">template</span> = hr · hiring · director · generic</li>
+            <li style="margin-bottom:4px;"><span class="kbd">vars.recipient_name</span> fills <span class="kbd">Dear {{recipient_name}}</span></li>
+            <li style="margin-bottom:4px;"><span class="kbd">html</span> = custom HTML body (optional)</li>
+            <li><span class="kbd">attachments[]</span> with base64 content (optional)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <h2>Templates</h2>
+      <p class="sub">Four letterhead templates — each with its own sender identity on the verified domain.</p>
+      <div class="grid">
+        <div class="tcard">
+          <div class="thumb"><img src="header.jpg" alt="Letterhead preview"></div>
+          <div class="body">
+            <h3>Congratulations</h3>
+            <div class="role">From · HR Manager · Amara Njoroge</div>
+            <div class="actions">
+              <a class="a primary" href="congrats-from-hr.html" target="_blank">Open template</a>
+              <a class="a" href="congrats-from-hr.html" download>Download</a>
+            </div>
+          </div>
+        </div>
+        <div class="tcard">
+          <div class="thumb"><img src="header.jpg" alt="Letterhead preview"></div>
+          <div class="body">
+            <h3>Welcome aboard</h3>
+            <div class="role">From · Hiring Manager · Daniel Ochieng</div>
+            <div class="actions">
+              <a class="a primary" href="congrats-from-hiring.html" target="_blank">Open template</a>
+              <a class="a" href="congrats-from-hiring.html" download>Download</a>
+            </div>
+          </div>
+        </div>
+        <div class="tcard">
+          <div class="thumb"><img src="header.jpg" alt="Letterhead preview"></div>
+          <div class="body">
+            <h3>Personal congratulations</h3>
+            <div class="role">From · Director · Grace Wambui</div>
+            <div class="actions">
+              <a class="a primary" href="congrats-from-director.html" target="_blank">Open template</a>
+              <a class="a" href="congrats-from-director.html" download>Download</a>
+            </div>
+          </div>
+        </div>
+        <div class="tcard">
+          <div class="thumb"><img src="header.jpg" alt="Letterhead preview"></div>
+          <div class="body">
+            <h3>Generic (placeholders)</h3>
+            <div class="role">From · Unity Software · {{sender_*}} vars</div>
+            <div class="actions">
+              <a class="a primary" href="congratulation-email.html" target="_blank">Open template</a>
+              <a class="a" href="congratulation-email.html" download>Download</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Receiving email</h2>
+      <p class="sub">Mailjet Inbound Parsing delivers replies to <span class="kbd">/api/inbound</span> as webhooks. The endpoint acknowledges the delivery and forwards the message to your configured inbox <span style="color:var(--text);">(INBOUND_FORWARD_TO)</span>.</p>
+      <div class="compose-grid">
+        <div class="card">
+          <h3>Webhook endpoint</h3>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:8px 0 12px;">Point a Mailjet Inbound route to this URL:</p>
+          <pre id="hookUrl">&lt;your-vercel-host&gt;/api/inbound</pre>
+        </div>
+        <div class="card">
+          <h3>Simulate a webhook</h3>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:8px 0 12px;">Validate the endpoint without real mail (forwards only if configured):</p>
+          <input id="mimicFrom" type="text" placeholder="sender@example.com">
+          <input id="mimicText" type="text" placeholder="Email body text…">
+          <div style="margin-top:14px;"><button class="btn btn-secondary" id="mimicBtn">POST /api/inbound</button></div>
+          <div id="mimicResult"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>From addresses (verified on unity-software.online)</h2>
+      <div class="card" style="padding:18px 26px;">
+        <div style="display:grid; gap:6px; font-size:0.9rem;">
+          <div><b>hr@unity-software.online</b> — Amara Njoroge, HR Manager</div>
+          <div><b>hiring@unity-software.online</b> — Daniel Ochieng, Hiring Manager</div>
+          <div><b>director@unity-software.online</b> — Grace Wambui, Director</div>
+          <div><b>hello@unity-software.online</b> — general / fallback</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Unity Software · Liceria &amp; Co. · <a href="https://www.unity-software.online" style="color:var(--accent); text-decoration:none;">www.unity-software.online</a> ·
+      built on Mailjet · deployed to Vercel
+    </footer>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    async function checkHealth() {
+      const el = $('status');
+      const dot = el.firstElementChild;
+      try {
+        const r = await fetch('/api/health');
+        const d = await r.json();
+        dot.classList.add('up');
+        el.appendChild(document.createTextNode(' Service online · ' + (d.templates || []).length + ' templates · ' + (d.defaultSender || '')));
+      } catch (e) {
+        dot.classList.add('down');
+        el.appendChild(document.createTextNode(' Service offline (' + e.message + ')'));
+      }
+    }
+    function show(id, cls, html) {
+      const el = $(id);
+      el.className = cls;
+      el.innerHTML = html;
+    }
+    $('sendBtn').addEventListener('click', async () => {
+      const btn = $('sendBtn');
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        const fromSel = $('fromSel').value;
+        const payload = {
+          template: $('template').value,
+          to: $('to').value,
+          toName: $('toName').value,
+          subject: $('subject').value || undefined
+        };
+        if (fromSel !== 'default') payload.from = { email: fromSel, name: undefined };
+        const r = await fetch('/api/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (r.ok) show('result', 'ok', 'Sent to <b>' + d.to + '</b> from ' + d.from + ' — Mailjet MessageID: ' + d.messageId);
+        else show('result', 'err', 'Error ' + r.status + ': ' + d.error);
+      } catch (e) {
+        show('result', 'err', 'Request failed: ' + e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Send email';
+      }
+    });
+    $('mimicBtn').addEventListener('click', async () => {
+      const btn = $('mimicBtn');
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/inbound', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ From: $('mimicFrom').value, Subject: 'Webhook test', text: $('mimicText').value })
+        });
+        const d = await r.json();
+        show('mimicResult', r.ok ? 'ok' : 'err', JSON.stringify(d));
+      } catch (e) {
+        show('mimicResult', 'err', 'Request failed: ' + e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+    $('hookUrl').textContent = location.origin + '/api/inbound';
+    checkHealth();
+  </script>
+</body>
+</html>
