@@ -2,9 +2,23 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  TEMPLATE_HR,
+  TEMPLATE_HIRING,
+  TEMPLATE_DIRECTOR,
+  TEMPLATE_GENERIC
+} from './templates-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
+
+/** Embedded copies (used on serverless runtimes where files are not bundled). */
+const EMBEDDED = {
+  hr: TEMPLATE_HR,
+  hiring: TEMPLATE_HIRING,
+  director: TEMPLATE_DIRECTOR,
+  generic: TEMPLATE_GENERIC
+};
 
 /** Sender identity defined by the README / MailerSend setup, now used with Mailjet. */
 export const TEMPLATES = {
@@ -52,7 +66,8 @@ export function loadTemplate(id) {
   try {
     return readFileSync(join(ROOT, t.file), 'utf-8');
   } catch {
-    return null;
+    // Not bundled on this runtime — use the embedded copy.
+    return EMBEDDED[id] || null;
   }
 }
 
