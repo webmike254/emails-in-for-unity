@@ -24,6 +24,8 @@ Branded letterhead emails for [Unity Software](https://www.unity-software.online
 | `api/_lib/` | Shared helpers (Mailjet, templates, SigV4/R2, HTTP/multipart) |
 | `tools/` | Local scripts (`test-send.mjs`, `upload-assets.mjs`, smoke tests) |
 
+Zero runtime dependencies — functions use Node's built-in `fetch` and `crypto`. Vercel auto-detects `api/*.js` as serverless functions and serves everything else as static files.
+
 ## Environment variables
 
 Set these in the Vercel project (or a local `.env`):
