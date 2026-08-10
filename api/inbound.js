@@ -6,7 +6,7 @@
 // forward the message to that inbox via Mailjet send — giving you a real
 // "receive" side with your existing mailbox.
 import { readBody, parseMultipartForm, json, clean } from './_lib/http.mjs';
-import { sendMail } from './_lib/mailjet.mjs';
+import { sendMail } from './_lib/sender.mjs';
 
 function pick(fields, ...names) {
   for (const n of names) {

@@ -13,7 +13,7 @@
 //   "attachments": [{ "contentType": "...", "filename": "...", "base64": "..." }]
 // }
 import { readBody, json, clean } from './_lib/http.mjs';
-import { sendMail } from './_lib/mailjet.mjs';
+import { sendMail, activeProvider } from './_lib/sender.mjs';
 import { getTemplate, buildTemplate } from './_lib/templates.mjs';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -80,6 +80,7 @@ export default async function handler(req, res) {
       template: templateId,
       from: from.email,
       subject,
+      provider: result.provider,
       messageId: result.messageId
     });
   } catch (err) {

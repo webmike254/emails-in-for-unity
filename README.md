@@ -32,8 +32,10 @@ Set these in the Vercel project (or a local `.env`):
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `MAILJET_API_KEY` | yes (sending) | Mailjet API key |
-| `MAILJET_SECRET_KEY` | yes (sending) | Mailjet secret key |
+| `MAILJET_API_KEY` | yes* | Mailjet API key (*or a MailerSend token — see below) |
+| `MAILJET_SECRET_KEY` | yes* | Mailjet secret key |
+| `MAILERSEND_API_TOKEN` | alt | Set to send through MailerSend instead (helpful while a Mailjet account is blocked) |
+| `SEND_PROVIDER` | no | `auto` (default) · `mailjet` · `mailersend` |
 | `SENDER_DEFAULT` | no | e.g. `hr@unity-software.online` |
 | `SENDER_NAME_DEFAULT` | no | e.g. `Unity Software` |
 | `INBOUND_FORWARD_TO` | for inbound | Where received mail is forwarded |
