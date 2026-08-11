@@ -18,20 +18,34 @@ export default async function handler(req, res) {
   if (!key) return json(res, 500, { error: 'RESEND_API_KEY is not set.' });
 
   try {
-    const r = await fetch('https://api.resend.com/domains', {
+    const list = await fetch('https://api.resend.com/domains', {
       headers: { Authorization: `Bearer ${key}` }
     });
-    const body = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      return json(res, r.status, { ok: false, status: r.status, error: body.message || body });
+    const listBody = await list.json().catch(() => ({}));
+    if (!list.ok) return json(res, list.status, { ok: false, status: list.status, error: listBody.message || listBody });
+
+    const domains = [];
+    for (const d of listBody.data || []) {
+      const detail = await fetch(`https://api.resend.com/domains/${d.id}`, {
+        headers: { Authorization: `Bearer ${key}` }
+      });
+      const db = await detail.json().catch(() => ({}));
+      domains.push({
+        id: d.id,
+        name: d.name,
+        status: d.status,
+        records: (db.records || []).map((r) => ({
+          type: r.type,
+          record: r.record,
+          name: r.name,
+          value: r.value,
+          status: r.status,
+          ttl: r.ttl,
+          priority: r.priority
+        }))
+      });
     }
-    const summary = (body.data || []).map((d) => ({
-      id: d.id,
-      name: d.name,
-      status: d.status,
-      records: (d.records || []).map((rec) => ({ type: rec.type, name: rec.name, value: rec.value, status: rec.status }))
-    }));
-    return json(res, 200, { ok: true, domains: summary });
+    return json(res, 200, { ok: true, domains });
   } catch (e) {
     return json(res, 500, { ok: false, error: e.message });
   }
