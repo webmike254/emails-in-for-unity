@@ -545,3 +545,115 @@ export const TEMPLATE_GENERIC = `<!DOCTYPE html>
 </body>
 </html>
 `;
+
+export const TEMPLATE_CUSTOM = `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Message — Unity Software</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+    .ReadMsgBody { width: 100%; }
+    .ExternalClass { width: 100%; }
+    .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div { line-height: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; color: #1a1a1a; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg { background-color: #0f0f0f !important; }
+      .card { background-color: #1c1c1e !important; }
+      .text-primary { color: #f5f5f7 !important; }
+      .text-secondary { color: #a1a1a6 !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5;" class="email-bg">
+  <div style="display:none; font-size:1px; color:#f4f4f5; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+    A message from the team at Unity Software
+  </div>
+
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f4f4f5;" class="email-bg">
+    <tr>
+      <td align="center" style="padding: 32px 16px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);" class="card">
+
+          <!-- Letterhead -->
+          <tr>
+            <td style="padding:0; line-height:0;">
+              <img src="header.jpg" alt="Unity Software — Liceria &amp; Co." width="600" style="display:block; width:100%; max-width:600px; height:auto;" />
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px 40px 28px 40px;">
+              <p style="margin:0 0 20px 0; font-size:15px; line-height:1.5; color:#6b7280;" class="text-secondary">
+                Dear {{recipient_name}},
+              </p>
+              {{email_body}}
+            </td>
+          </tr>
+          <!-- Signature -->
+          <tr>
+            <td style="padding: 0 40px 36px 40px;">
+              <div style="height:3px; width:48px; background:linear-gradient(90deg,#f59e0b,#f97316); border-radius:2px; margin-bottom:20px;"></div>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td width="72" valign="top" style="padding-right:16px;">
+                    <img src="{{sender_avatar}}" alt="" width="64" height="64" style="display:block; width:64px; height:64px; border-radius:50%; border:2px solid #f3f4f6;" />
+                  </td>
+                  <td valign="middle">
+                    <p style="margin:0 0 2px 0; font-size:16px; font-weight:600; color:#111827;" class="text-primary">{{sender_name}}</p>
+                    <p style="margin:0 0 6px 0; font-size:13px; color:#6b7280; font-weight:500;" class="text-secondary">{{sender_title}} · Unity Software</p>
+                    <p style="margin:0; font-size:13px; line-height:1.5; color:#6b7280;" class="text-secondary">
+                      <a href="tel:+254778903044" style="color:#6b7280; text-decoration:none;">+254 778 903 044</a><br>
+                      <a href="mailto:{{sender_email}}" style="color:#6b7280; text-decoration:none;">{{sender_email}}</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#111827;">
+                <tr>
+                  <td style="padding:28px 40px;">
+                    <p style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:#f9fafb; letter-spacing:0.02em;">UNITY SOFTWARE</p>
+                    <p style="margin:0 0 16px 0; font-size:12px; line-height:1.5; color:#9ca3af;">Logistics excellence · Supply chain optimization</p>
+                    <p style="margin:0; font-size:12px; line-height:1.6; color:#9ca3af;">
+                      <a href="https://www.unity-software.online" style="color:#f59e0b; text-decoration:none;">www.unity-software.online</a>
+                      &nbsp;·&nbsp;
+                      <a href="mailto:hello@unity-software.online" style="color:#9ca3af; text-decoration:none;">hello@unity-software.online</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- legal note -->
+          <tr>
+            <td style="padding:24px 16px; text-align:center;">
+              <p style="margin:0; font-size:11px; line-height:1.5; color:#9ca3af;">
+                This message was sent by Unity Software (Liceria &amp; Co.).<br>
+                If you received this in error, please disregard.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;

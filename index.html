@@ -42,6 +42,7 @@
       border: 1px solid #d4d4d8; border-radius: 10px; background: #fff; color: var(--text); outline: none;
     }
     input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+    input[type="radio"] { width: auto; margin: 0; }
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       padding: 11px 18px; font-size: 0.9375rem; font-weight: 600; border: none; border-radius: 980px;
@@ -88,10 +89,19 @@
     
 <section class="section">
       <h2>Send a test email</h2>
-      <p class="sub">Pick a template, enter the recipient, and the API will fill the placeholders and deliver it via Mailjet from the matching sender on <b>unity-software.online</b>.</p>
+      <p class="sub">Send a branded template <b>or write your own custom email</b>. Pick the mode, choose who it's from, and hit send — delivered via your configured provider from an address on <b>unity-software.online</b>.</p>
       <div class="compose-grid">
         <div class="card">
+          <label style="margin-top:0;">Compose</label>
           <div class="row">
+            <label style="display:flex;align-items:center;gap:8px;font-weight:500;margin:0;">
+              <input type="radio" name="mode" value="template" checked onchange="toggleMode()"> Template
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-weight:500;margin:0;">
+              <input type="radio" name="mode" value="custom" onchange="toggleMode()"> Custom email
+            </label>
+          </div>
+          <div id="templateRow" class="row" style="margin-top:6px;">
             <div>
               <label for="template">Template</label>
               <select id="template">
@@ -112,6 +122,21 @@
               </select>
             </div>
           </div>
+          <div id="customRow" class="row" style="display:none; margin-top:6px;">
+            <div>
+              <label for="identitySel">Send as (with signature)</label>
+              <select id="identitySel">
+                <option value="hr" selected>Amara Njoroge — HR Manager (hr@)</option>
+                <option value="hiring">Daniel Ochieng — Hiring Manager (hiring@)</option>
+                <option value="director">Grace Wambui — Director (director@)</option>
+                <option value="hello">Unity Software — General (hello@)</option>
+              </select>
+            </div>
+            <div>
+              <label for="senderName">Signature name (optional)</label>
+              <input id="senderName" type="text" placeholder="Auto from identity">
+            </div>
+          </div>
           <div class="row">
             <div>
               <label for="to">To</label>
@@ -122,8 +147,12 @@
               <input id="toName" type="text" placeholder="Jane Doe">
             </div>
           </div>
-          <label for="subject">Subject <span style="font-weight:400; color:var(--text-secondary);">(optional — overrides template)</span></label>
-          <input id="subject" type="text" placeholder="Leave blank for the template default">
+          <label for="subject">Subject</label>
+          <input id="subject" type="text" placeholder="Subject line">
+          <div id="bodyRow" style="display:none;">
+            <label for="body">Message (plain text — paragraphs are kept)</label>
+            <textarea id="body" rows="7" style="width:100%; border:1px solid #d4d4d8; border-radius:10px; padding:10px 12px; font:inherit; font-size:0.9375rem;" placeholder="Write your own message here…"></textarea>
+          </div>
           <div style="margin-top:22px;">
             <button class="btn" id="sendBtn">Send email</button>
           </div>
@@ -131,15 +160,20 @@
         </div>
         <div class="card">
           <h3>API use</h3>
-          <p style="font-size:0.875rem; color:var(--text-secondary); margin:8px 0 12px;">Direct curl usage — the form posts exactly this payload.</p>
-          <pre>curl -X POST /api/send \
+          <p style="font-size:0.875rem; color:var(--text-secondary); margin:8px 0 12px;">Template (left) or custom body (right) — both post the same /api/send.</p>
+          <pre id="curlSample">curl -X POST /api/send \
   -H "Content-Type: application/json" \
-  -d '{"template":"hr","to":"name@example.com","toName":"Jane"}'</pre>
+  -d '{"template":"hr","to":"name@example.com","toName":"Jane"}'
+
+# custom:
+-d '{"to":"jane@x.com","subject":"Hello",
+     "body":"Your own message here\\nSecond paragraph",
+     "identity":"hr"}'</pre>
           <ul style="font-size:0.85rem; color:var(--text-secondary); margin:12px 0 0 18px; padding:0;">
-            <li style="margin-bottom:4px;"><span class="kbd">template</span> = hr · hiring · director · generic</li>
-            <li style="margin-bottom:4px;"><span class="kbd">vars.recipient_name</span> fills <span class="kbd">Dear {{recipient_name}}</span></li>
-            <li style="margin-bottom:4px;"><span class="kbd">html</span> = custom HTML body (optional)</li>
-            <li><span class="kbd">attachments[]</span> with base64 content (optional)</li>
+            <li style="margin-bottom:4px;"><span class="kbd">template</span> = hr · hiring · director · generic · custom</li>
+            <li style="margin-bottom:4px;"><span class="kbd">body</span> = your own plain-text message (custom)</li>
+            <li style="margin-bottom:4px;"><span class="kbd">identity</span> = hr · hiring · director · hello (sender + signature)</li>
+            <li><span class="kbd">html</span> = exact HTML (optional) · <span class="kbd">attachments[]</span> base64 (optional)</li>
           </ul>
         </div>
       </div>
@@ -252,25 +286,42 @@
       el.className = cls;
       el.innerHTML = html;
     }
+    const IDENTITIES = {
+      hr:      { email: 'hr@unity-software.online',      name: 'Amara Njoroge', title: 'HR Manager',     avatar: 'avatar_hr.png' },
+      hiring:  { email: 'hiring@unity-software.online',  name: 'Daniel Ochieng', title: 'Hiring Manager', avatar: 'avatar_hiring.png' },
+      director:{ email: 'director@unity-software.online',name: 'Grace Wambui',   title: 'Director',      avatar: 'avatar_director.png' },
+      hello:   { email: 'hello@unity-software.online',   name: 'Unity Software', title: 'Unity Software', avatar: 'avatar_hr.png' }
+    };
+    function toggleMode() {
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      $('templateRow').style.display = mode === 'template' ? '' : 'none';
+      $('customRow').style.display  = mode === 'custom'   ? '' : 'none';
+      $('bodyRow').style.display    = mode === 'custom'   ? '' : 'none';
+    }
     $('sendBtn').addEventListener('click', async () => {
       const btn = $('sendBtn');
       btn.disabled = true; btn.textContent = 'Sending…';
       try {
-        const fromSel = $('fromSel').value;
-        const payload = {
-          template: $('template').value,
-          to: $('to').value,
-          toName: $('toName').value,
-          subject: $('subject').value || undefined
-        };
-        if (fromSel !== 'default') payload.from = { email: fromSel, name: undefined };
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const base = { to: $('to').value, toName: $('toName').value, subject: $('subject').value || undefined };
+        let payload;
+        if (mode === 'custom') {
+          const id = IDENTITIES[$('identitySel').value] || IDENTITIES.hr;
+          payload = { ...base, template: 'custom', body: $('body').value, from: { email: id.email, name: id.name },
+                      sender_title: id.title, sender_avatar: id.avatar,
+                      sender_name: $('senderName').value || id.name };
+        } else {
+          payload = { ...base, template: $('template').value };
+          const fromSel = $('fromSel').value;
+          if (fromSel !== 'default') payload.from = { email: fromSel };
+        }
         const r = await fetch('/api/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
         const d = await r.json();
-        if (r.ok) show('result', 'ok', 'Sent to <b>' + d.to + '</b> from ' + d.from + ' — Mailjet MessageID: ' + d.messageId);
+        if (r.ok) show('result', 'ok', 'Sent to <b>' + d.to + '</b> from ' + d.from + ' via ' + d.provider + ' — ID: ' + d.messageId);
         else show('result', 'err', 'Error ' + r.status + ': ' + d.error);
       } catch (e) {
         show('result', 'err', 'Request failed: ' + e.message);

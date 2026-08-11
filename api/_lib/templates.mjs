@@ -6,7 +6,8 @@ import {
   TEMPLATE_HR,
   TEMPLATE_HIRING,
   TEMPLATE_DIRECTOR,
-  TEMPLATE_GENERIC
+  TEMPLATE_GENERIC,
+  TEMPLATE_CUSTOM
 } from './templates-data.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -17,7 +18,8 @@ const EMBEDDED = {
   hr: TEMPLATE_HR,
   hiring: TEMPLATE_HIRING,
   director: TEMPLATE_DIRECTOR,
-  generic: TEMPLATE_GENERIC
+  generic: TEMPLATE_GENERIC,
+  custom: TEMPLATE_CUSTOM
 };
 
 /** Sender identity defined by the README / MailerSend setup, now used with Mailjet. */
@@ -47,6 +49,13 @@ export const TEMPLATES = {
     file: 'congratulation-email.html',
     from: { email: 'hello@unity-software.online', name: 'Unity Software' },
     subject: 'Congratulations',
+    avatar: 'avatar_hr.png',
+    senderTitle: 'Unity Software'
+  },
+  custom: {
+    file: 'custom-email.html',
+    from: { email: 'hr@unity-software.online', name: 'Unity Software' },
+    subject: 'Hello from Unity Software',
     avatar: 'avatar_hr.png',
     senderTitle: 'Unity Software'
   }
@@ -102,7 +111,8 @@ export function buildTemplate(id, vars = {}, assetBase = '') {
     recipient_name: 'there',
     sender_name: t.from.name,
     sender_title: t.senderTitle || 'Unity Software',
-    sender_email: t.from.email
+    sender_email: t.from.email,
+    sender_avatar: t.avatar || 'avatar_hr.png'
   };
   const merged = { ...defaults, ...vars };
   let rendered = fillTemplate(html, merged);

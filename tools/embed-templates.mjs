@@ -18,7 +18,8 @@ const FILES = {
   hr: 'congrats-from-hr.html',
   hiring: 'congrats-from-hiring.html',
   director: 'congrats-from-director.html',
-  generic: 'congratulation-email.html'
+  generic: 'congratulation-email.html',
+  custom: 'custom-email.html'
 };
 
 function toTemplateLiteral(content) {

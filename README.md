@@ -59,6 +59,23 @@ curl -X POST https://<your-app>.vercel.app/api/send \
 
 Optional fields: `from` (`{email,name}`), `html` (custom body), `text`, `attachments[]` (`contentType`, `filename`, `base64`).
 
+### Custom emails
+Send your own message instead of a canned template — just pass `body` (plain text; paragraphs are preserved) and identity:
+
+```bash
+curl -X POST https://<your-app>.vercel.app/api/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "jane@example.com",
+    "toName": "Jane",
+    "subject": "Just checking in",
+    "body": "Hi Jane,\n\nI wanted to reach out personally.\n\nBest,\nMike",
+    "identity": "hr"          # hr | hiring | director | hello  (sender + signature)
+  }'
+```
+
+You can also override the signature with `sender_name`, `sender_title`, `sender_email`, `sender_avatar`.
+
 ## Receive email (Mailjet Inbound Parsing)
 
 1. In the Mailjet dashboard open **Inbound Parsing** and add a domain, e.g. `inbound.unity-software.online`.

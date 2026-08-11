@@ -1,22 +1,41 @@
-// POST /api/send — send a branded Unity Software email via Mailjet.
+// POST /api/send — send a branded Unity Software email.
 //
 // Body (JSON):
 // {
-//   "template": "hr" | "hiring" | "director" | "generic"   (default: generic)
+//   "template": "hr" | "hiring" | "director" | "generic" | "custom"   (default: generic, or custom when body is set)
 //   "to": "person@example.com",
 //   "toName": "Jane Doe",
-//   "subject": "Optional override",
+//   "subject": "Subject line",
+//   "body": "Your own plain-text message…",   (custom emails: rendered with letterhead + signature)
+//   "sender_name": "Jane", "sender_title": "HR", "sender_email": "…", "sender_avatar": "avatar_hr.png",
 //   "from": { "email": "...", "name": "..." },              (optional override)
 //   "vars": { "recipient_name": "Jane" },                    (optional)
-//   "html": "<p>custom html</p>",                            (optional: use custom body)
+//   "html": "<p>custom html</p>",                            (optional: use exact custom body)
 //   "text": "plain text",                                    (optional)
 //   "attachments": [{ "contentType": "...", "filename": "...", "base64": "..." }]
 // }
 import { readBody, json, clean } from './_lib/http.mjs';
-import { sendMail, activeProvider } from './_lib/sender.mjs';
+import { sendMail } from './_lib/sender.mjs';
 import { getTemplate, buildTemplate } from './_lib/templates.mjs';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** Converts user plain-text into safe HTML paragraphs for the custom template. */
+function textToParagraphs(value) {
+  const html = String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(
+      (line) =>
+        `<p style="margin:0 0 16px 0; font-size:16px; line-height:1.65; color:#374151;" class="text-primary">${line}</p>`
+    )
+    .join('\n');
+  return html || '<p style="margin:0; font-size:16px; line-height:1.65; color:#374151;" class="text-primary"></p>';
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
@@ -35,9 +54,10 @@ export default async function handler(req, res) {
   }
   const toName = clean(data.toName) || to.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-  const templateId = clean(data.template, 'generic');
+  const wantsCustom = typeof data.body === 'string' && data.body.trim().length > 0;
+  const templateId = clean(data.template, wantsCustom ? 'custom' : 'generic');
   const tpl = getTemplate(templateId);
-  if (!tpl) return json(res, 400, { error: `Unknown template "${templateId}". Valid: hr, hiring, director, generic.` });
+  if (!tpl) return json(res, 400, { error: `Unknown template "${templateId}". Valid: hr, hiring, director, generic, custom.` });
 
   const from = data.from && data.from.email
     ? { email: clean(data.from.email), name: clean(data.from.name) || tpl.from.name }
@@ -49,6 +69,13 @@ export default async function handler(req, res) {
 
   const vars = data.vars && typeof data.vars === 'object' ? data.vars : {};
   vars.recipient_name = clean(vars.recipient_name, toName);
+  if (wantsCustom || templateId === 'custom') {
+    vars.sender_name = clean(data.sender_name, from.name);
+    vars.sender_title = clean(data.sender_title, tpl.senderTitle || 'Unity Software');
+    vars.sender_email = clean(data.sender_email, from.email);
+    vars.sender_avatar = clean(data.sender_avatar, tpl.avatar || 'avatar_hr.png');
+    vars.email_body = textToParagraphs(data.body);
+  }
 
   let html = null;
   let text = clean(data.text);
@@ -61,6 +88,7 @@ export default async function handler(req, res) {
       return json(res, 500, { success: false, error: `Template render failed: ${err.message}` });
     }
   }
+  if (!text && data.body) text = clean(data.body);
 
   const subject = clean(data.subject) || tpl.subject;
 
