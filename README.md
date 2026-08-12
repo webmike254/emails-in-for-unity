@@ -38,6 +38,9 @@ Set these in the Vercel project (or a local `.env`):
 | `MAILJET_API_KEY` / `MAILJET_SECRET_KEY` | optional | Only used if `SEND_PROVIDER=mailjet` |
 | `SENDER_DEFAULT` | no | e.g. `hr@unity-software.online` |
 | `SENDER_NAME_DEFAULT` | no | e.g. `Unity Software` |
+| `SUPABASE_URL` | for inbox | Your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | for inbox | Supabase service-role key |
+| `INBOX_PIN` | for inbox | PIN required to open the in-app Inbox |
 | `INBOUND_FORWARD_TO` | for inbound | Where received mail is forwarded |
 | `ASSET_BASE_URL` | no | Absolute image base for emails; defaults to the deployment origin |
 | `SETUP_SECRET` | for `/api/r2-setup` | Secret header value protecting that endpoint |
@@ -96,6 +99,19 @@ curl -X POST https://<your-app>.vercel.app/api/r2-setup \
 ```
 
 It creates the bucket, uploads `header.jpg` + avatars, applies a public-read policy, and returns the `assetBase`. Set that as `ASSET_BASE_URL` and redeploy. (`tools/upload-assets.mjs` is the local equivalent.)
+
+## In-app Inbox (Supabase)
+
+Received mail — from many people, with documents/media attachments — is stored on your **Supabase** project and shown in the **Inbox** section of the web app.
+
+1. In your Supabase project open the **SQL Editor** and run `supabase-schema.sql` (creates the `emails` table).
+2. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `INBOX_PIN` as Vercel env vars.
+3. Open the site → **Inbox** → enter the PIN.
+
+Endpoints (PIN via `x-inbox-pin` header):
+- `GET /api/inbox` — list · `GET /api/inbox?id=…` — one message
+- `PATCH /api/inbox` `{id, is_read, starred}` · `DELETE /api/inbox` `{id}`
+- `GET /api/inbox-attachment?id=…&i=0` — stream one attachment (image/document)
 
 ## Local development
 

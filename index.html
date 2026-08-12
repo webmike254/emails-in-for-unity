@@ -72,6 +72,13 @@
     #status .dot.up { background: var(--ok); }
     #status .dot.down { background: var(--err); }
     footer { border-top: 1px solid var(--border); padding-top: 28px; color: var(--text-secondary); font-size: 0.875rem; }
+    #inboxList .msg { padding: 12px 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    #inboxList .msg:hover { background: #fafafa; }
+    #inboxList .msg.unread { border-left: 3px solid var(--accent); }
+    #inboxList .msg .t { font-weight: 600; font-size: 0.875rem; }
+    #inboxList .msg .s { font-size: 0.8rem; color: var(--text-secondary); }
+    #inboxDetail .att { display: inline-block; margin: 4px 8px 4px 0; font-size: 0.8125rem; }
+    #inboxDetail .att img.pv { max-width: 100%; margin-top: 8px; border-radius: 10px; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -261,6 +268,42 @@
       </div>
     </section>
 
+    <section class="section" id="inboxSection">
+      <h2>Inbox</h2>
+      <p class="sub">Messages received from people (job applications, media, documents) are stored here in Supabase. Enter the inbox PIN to view.</p>
+      <div class="card" style="padding:20px 26px;">
+        <div class="row">
+          <div>
+            <label for="inboxPin">Inbox PIN</label>
+            <input id="inboxPin" type="password" placeholder="Set via INBOX_PIN env var">
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button class="btn btn-secondary" id="inboxLoadBtn">Open inbox</button>
+          </div>
+        </div>
+        <div id="inboxStatus" style="margin-top:10px; font-size:0.85rem; color:var(--text-secondary);"></div>
+        <div id="inboxLayout" style="display:none; margin-top:16px;">
+          <div class="row" style="gap:18px;">
+            <div style="min-width:0;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <b style="font-size:0.9rem;">Messages (<span id="inboxCount">0</span>)</b>
+                <button class="a" id="inboxRefreshBtn">Refresh</button>
+              </div>
+              <div id="inboxList" style="border:1px solid var(--border); border-radius:12px; overflow:auto; max-height:460px;"></div>
+            </div>
+            <div style="min-width:0;">
+              <div id="inboxDetail" style="border:1px solid var(--border); border-radius:12px; padding:16px; min-height:200px; max-height:560px; overflow:auto;">
+                <p style="color:var(--text-secondary); font-size:0.85rem;">Select a message to read it.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="a" id="inboxSimBtn">+ Send a sample inbound to test the inbox</button>
+      </div>
+    </section>
+
     <footer>
       Unity Software · Liceria &amp; Co. · <a href="https://www.unity-software.online" style="color:var(--accent); text-decoration:none;">www.unity-software.online</a> ·
       built on Mailjet · deployed to Vercel
@@ -347,6 +390,108 @@
       }
     });
     $('hookUrl').textContent = location.origin + '/api/inbound';
+
+    // ===== Inbox (Supabase-backed) =====
+    let inboxPin = localStorage.getItem('unityInboxPin') || '';
+    if (inboxPin) $('inboxPin').value = inboxPin;
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function fmtSize(n) {
+      if (!n) return '?';
+      return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB';
+    }
+    function inboxHeaders() {
+      return { 'x-inbox-pin': inboxPin, 'Content-Type': 'application/json' };
+    }
+    function inboxStatus(msg, isErr) {
+      const el = $('inboxStatus');
+      el.style.color = isErr ? 'var(--err)' : 'var(--text-secondary)';
+      el.textContent = msg || '';
+    }
+    async function loadInbox() {
+      inboxPin = $('inboxPin').value || inboxPin;
+      localStorage.setItem('unityInboxPin', inboxPin);
+      inboxStatus('Loading…');
+      try {
+        const r = await fetch('/api/inbox', { headers: inboxHeaders() });
+        const d = await r.json();
+        if (!r.ok) { inboxStatus('Inbox error ' + r.status + ': ' + (d.error || ''), true); return; }
+        $('inboxLayout').style.display = '';
+        $('inboxCount').textContent = d.count || 0;
+        const list = $('inboxList');
+        list.innerHTML = '';
+        (d.messages || []).forEach((m) => {
+          const div = document.createElement('div');
+          div.className = 'msg' + (m.is_read ? '' : ' unread');
+          div.innerHTML = '<div class="t">' + esc(m.subject || '(no subject)') + '</div>' +
+            '<div class="s">' + esc(m.sender) + ' · ' + new Date(m.created_at).toLocaleString() + '</div>';
+          div.onclick = () => openInboxMessage(m.id);
+          list.appendChild(div);
+        });
+        if (!(d.messages || []).length) list.innerHTML = '<p style="padding:14px;color:var(--text-secondary);font-size:0.85rem;">No messages yet.</p>';
+        inboxStatus('Loaded.');
+      } catch (e) { inboxStatus('Failed: ' + e.message, true); }
+    }
+    async function openInboxMessage(id) {
+      inboxStatus('Opening…');
+      try {
+        const r = await fetch('/api/inbox?id=' + encodeURIComponent(id), { headers: inboxHeaders() });
+        const d = await r.json();
+        if (!r.ok || !d.message) { inboxStatus('Error ' + r.status + ': ' + (d.error || ''), true); return; }
+        const m = d.message;
+        let atts = '';
+        (m.attachments || []).forEach((a, i) => {
+          const url = '/api/inbox-attachment?id=' + encodeURIComponent(id) + '&i=' + i;
+          if ((a.content_type || '').startsWith('image/')) {
+            atts += '<div class="att"><a href="' + url + '" target="_blank">' + esc(a.filename) + '</a><br><img class="pv" src="' + url + '" alt=""></div>';
+          } else {
+            atts += '<div class="att"><a href="' + url + '" target="_blank" download>' + esc(a.filename) + ' (' + fmtSize(a.size) + ')</a></div>';
+          }
+        });
+        const idJson = JSON.stringify(id);
+        $('inboxDetail').innerHTML =
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">' +
+          '<b>' + esc(m.subject || '(no subject)') + '</b>' +
+          '<span><button class="a" onclick="markInbox(' + idJson + ',true)">Mark read</button> <button class="a" onclick="deleteInbox(' + idJson + ')">Delete</button></span></div>' +
+          '<div style="font-size:0.82rem;color:var(--text-secondary);margin:6px 0 12px;">From: ' + esc(m.sender) + '<br>To: ' + esc(m.recipient || '') + '<br>' + new Date(m.created_at).toLocaleString() + '</div>' +
+          '<div style="font-size:0.92rem;white-space:pre-wrap;">' + esc(m.body_text || m.body_html || '') + '</div>' +
+          (atts ? '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;"><b style="font-size:0.85rem;">Attachments</b>' + atts + '</div>' : '');
+        if (!m.is_read) markInbox(id, true, true);
+        inboxStatus('Loaded.');
+      } catch (e) { inboxStatus('Failed: ' + e.message, true); }
+    }
+    async function markInbox(id, read, silent) {
+      try {
+        await fetch('/api/inbox', { method: 'PATCH', headers: inboxHeaders(), body: JSON.stringify({ id, is_read: read }) });
+        if (!silent) loadInbox();
+      } catch (e) { /* ignore */ }
+    }
+    async function deleteInbox(id) {
+      if (!confirm('Delete this message?')) return;
+      try {
+        await fetch('/api/inbox', { method: 'DELETE', headers: inboxHeaders(), body: JSON.stringify({ id }) });
+        $('inboxDetail').innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;">Select a message to read it.</p>';
+        loadInbox();
+      } catch (e) { /* ignore */ }
+    }
+    $('inboxLoadBtn').addEventListener('click', loadInbox);
+    $('inboxRefreshBtn').addEventListener('click', loadInbox);
+    $('inboxPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadInbox(); });
+    $('inboxSimBtn').addEventListener('click', async () => {
+      const btn = $('inboxSimBtn'); btn.disabled = true;
+      try {
+        const r = await fetch('/api/inbound', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ From: 'candidate@example.com', Subject: 'Job application - Software Engineer', text: 'Dear Team, I would like to apply for the role. My CV is attached. Regards, Jane.' })
+        });
+        const d = await r.json();
+        inboxStatus(d.stored ? 'Sample stored in the inbox ✓ (open/refresh to see it)' : 'Sample not stored: ' + (d.storeError || '?'));
+      } catch (e) { inboxStatus('Failed: ' + e.message, true); }
+      btn.disabled = false;
+    });
+
     checkHealth();
   </script>
 </body>

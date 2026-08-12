@@ -7,12 +7,57 @@
 // "receive" side with your existing mailbox.
 import { readBody, parseMultipartForm, json, clean } from './_lib/http.mjs';
 import { sendMail } from './_lib/sender.mjs';
+import { supabaseConfigured, sbRequest } from './_lib/supabase.mjs';
 
 function pick(fields, ...names) {
   for (const n of names) {
     if (fields[n] !== undefined && fields[n] !== '') return fields[n];
   }
   return '';
+}
+
+const MAX_ATTACH = 2 * 1024 * 1024; // 2 MB per attachment (base64)
+
+/** Converts inbound files into a store-friendly attachment array (base64). */
+function buildAttachments(files) {
+  if (!Array.isArray(files)) return [];
+  return files
+    .filter((f) => f && f.data && f.data.length > 0)
+    .map((f) => {
+      const b64 = f.data.toString('base64');
+      if (b64.length > MAX_ATTACH) return null; // skip oversized blobs
+      return {
+        filename: f.filename || 'file',
+        content_type: f.contentType || 'application/octet-stream',
+        size: f.size,
+        data: b64
+      };
+    })
+    .filter(Boolean);
+}
+
+/** Persists a received message into the Supabase inbox. */
+async function storeInbox(inbound, attachments) {
+  if (!supabaseConfigured()) return { stored: false, reason: 'supabase-not-configured' };
+  const row = {
+    sender: clean(inbound.from, 'unknown'),
+    recipient: clean(inbound.to) || null,
+    subject: clean(inbound.subject) || '(no subject)',
+    body_text: clean(inbound.text) || null,
+    body_html: clean(inbound.html) || null,
+    attachments,
+    metadata: { date: clean(inbound.date) || null, raw_from: clean(inbound.from) || null }
+  };
+  try {
+    const r = await sbRequest('POST', '/emails', { body: row });
+    if (!r.ok) {
+      const msg = (r.data && (r.data.message || r.data.error || r.data.details)) || `HTTP ${r.status}`;
+      return { stored: false, reason: String(msg).slice(0, 300) };
+    }
+    return { stored: true, id: (r.data && r.data[0] && r.data[0].id) || null };
+  } catch (e) {
+    return { stored: false, reason: e.message };
+  }
 }
 
 function toPlainHtml(text) {
@@ -69,6 +114,8 @@ export default async function handler(req, res) {
     }
   }
 
+  const attachments = buildAttachments(files);
+
   const inbound = {
     from: pick(fields, 'From', 'Header-from', 'Sender', 'sender', 'from'),
     to: pick(fields, 'RcptTo', 'Recipient', 'To', 'recipient', 'to'),
@@ -79,11 +126,20 @@ export default async function handler(req, res) {
     attachments: files
   };
 
+  const stored = await storeInbox(inbound, attachments);
+
   try {
     await deliver(inbound);
   } catch {
     // Forwarding is best-effort; never fail the webhook on it.
   }
 
-  return json(res, 200, { ok: true, receivedFrom: inbound.from || null, subject: inbound.subject || null });
+  return json(res, 200, {
+    ok: true,
+    receivedFrom: inbound.from || null,
+    subject: inbound.subject || null,
+    stored: stored.stored,
+    inboxId: stored.id || null,
+    storeError: stored.stored ? undefined : stored.reason
+  });
 }
