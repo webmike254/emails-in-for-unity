@@ -1,16 +1,11 @@
 // /api/inbox-attachment — stream one stored attachment (media/document) back.
 // GET ?id=<message-uuid>&i=<attachment-index>&name=<filename>
-// Requires x-inbox-pin header.
 import { json } from './_lib/http.mjs';
 import { supabaseConfigured, sbRequest } from './_lib/supabase.mjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
 
-  const pin = process.env.INBOX_PIN;
-  if (pin && (req.headers['x-inbox-pin'] || '') !== pin) {
-    return json(res, 401, { error: 'Invalid or missing inbox PIN.' });
-  }
   if (!supabaseConfigured()) {
     return json(res, 500, { error: 'Supabase is not configured.' });
   }

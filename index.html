@@ -95,16 +95,10 @@
       <div id="status"><span class="dot"></span>Checking service…</div>
     <section class="section" id="inboxSection">
       <h2>Inbox <span style="font-size:0.75rem;color:var(--text-secondary);font-weight:400;">(received mail — from any @unity-software.online address)</span></h2>
-      <p class="sub">Job applications, media and documents from many people land here. Enter the inbox PIN and press Open.</p>
+      <p class="sub">Job applications, media and documents from many people land here. It updates automatically — press Refresh to pull new mail.</p>
       <div class="card" style="padding:20px 26px;">
-        <div class="row">
-          <div>
-            <label for="inboxPin">Inbox PIN</label>
-            <input id="inboxPin" type="password" placeholder="Set via INBOX_PIN env var">
-          </div>
-          <div style="display:flex; align-items:flex-end;">
-            <button class="btn btn-secondary" id="inboxLoadBtn">Open inbox</button>
-          </div>
+        <div style="margin-top:6px;">
+          <button class="btn btn-secondary" id="inboxLoadBtn">Open inbox</button>
         </div>
         <div id="inboxStatus" style="margin-top:10px; font-size:0.85rem; color:var(--text-secondary);"></div>
         <div id="inboxLayout" style="display:none; margin-top:16px;">
@@ -467,9 +461,7 @@
       }
     }).catch(() => {});
 
-    // ===== Inbox (Supabase-backed) =====
-    let inboxPin = localStorage.getItem('unityInboxPin') || '';
-    if (inboxPin) $('inboxPin').value = inboxPin;
+    // ===== Inbox (Supabase-backed, open) =====
     function esc(s) {
       return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
@@ -478,7 +470,7 @@
       return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB';
     }
     function inboxHeaders() {
-      return { 'x-inbox-pin': inboxPin, 'Content-Type': 'application/json' };
+      return { 'Content-Type': 'application/json' };
     }
     function inboxStatus(msg, isErr) {
       const el = $('inboxStatus');
@@ -486,8 +478,6 @@
       el.textContent = msg || '';
     }
     async function loadInbox() {
-      inboxPin = $('inboxPin').value || inboxPin;
-      localStorage.setItem('unityInboxPin', inboxPin);
       inboxStatus('Loading…');
       try {
         const r = await fetch('/api/inbox', { headers: inboxHeaders() });
@@ -553,7 +543,7 @@
     }
     $('inboxLoadBtn').addEventListener('click', loadInbox);
     $('inboxRefreshBtn').addEventListener('click', loadInbox);
-    $('inboxPin').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadInbox(); });
+    loadInbox(); // open the inbox automatically
     $('inboxSimBtn').addEventListener('click', async () => {
       const btn = $('inboxSimBtn'); btn.disabled = true;
       try {

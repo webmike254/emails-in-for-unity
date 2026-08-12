@@ -1,8 +1,5 @@
 // /api/inbox — view/manage received mail stored in Supabase.
 //
-// All requests require the inbox PIN:
-//   x-inbox-pin: <INBOX_PIN>
-//
 // GET  ?id=<uuid>          -> single message (with attachments)
 // GET  ?limit=100          -> list messages (meta only)
 // PATCH {id,is_read?,starred?} -> update flags
@@ -11,14 +8,7 @@
 import { readBody, json, clean } from './_lib/http.mjs';
 import { supabaseConfigured, sbRequest } from './_lib/supabase.mjs';
 
-function authed(req) {
-  const pin = process.env.INBOX_PIN;
-  if (!pin) return true; // open when no PIN configured (dev)
-  return (req.headers['x-inbox-pin'] || '') === pin;
-}
-
 export default async function handler(req, res) {
-  if (!authed(req)) return json(res, 401, { error: 'Invalid or missing inbox PIN.' });
   if (!supabaseConfigured()) {
     return json(res, 500, {
       error: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel.',
