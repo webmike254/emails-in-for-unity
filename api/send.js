@@ -94,18 +94,20 @@ export default async function handler(req, res) {
   try {
     const result = await sendMail({ from, to: toArray, subject, html, text, attachments });
 
-    // Best-effort: log the send for the "Sent today" counter (Supabase).
+    // Best-effort: log one send per recipient for the "Sent today" counter.
     if (supabaseConfigured()) {
-      sbRequest('POST', '/sends', {
-        body: {
-          sender: from.email,
-          recipient: toList.join(', '),
-          template: templateId,
-          subject: subject || null,
-          provider: result.provider,
-          message_id: result.messageId || null
-        }
-      }).catch(() => {});
+      for (const email of toList) {
+        sbRequest('POST', '/sends', {
+          body: {
+            sender: from.email,
+            recipient: email,
+            template: templateId,
+            subject: subject || null,
+            provider: result.provider,
+            message_id: result.messageId || null
+          }
+        }).catch(() => {});
+      }
     }
 
     return json(res, 200, {
