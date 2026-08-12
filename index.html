@@ -328,12 +328,77 @@
       el.className = cls;
       el.innerHTML = html;
     }
-    const IDENTITIES = {
-      hr:      { email: 'hr@unity-software.online',      name: 'Amara Njoroge', title: 'HR Manager',     avatar: 'avatar_hr.png' },
-      hiring:  { email: 'hiring@unity-software.online',  name: 'Daniel Ochieng', title: 'Hiring Manager', avatar: 'avatar_hiring.png' },
-      director:{ email: 'director@unity-software.online',name: 'Grace Wambui',   title: 'Director',      avatar: 'avatar_director.png' },
-      hello:   { email: 'hello@unity-software.online',   name: 'Unity Software', title: 'Unity Software', avatar: 'avatar_hr.png' }
-    };
+    const IDENTITY_GROUPS = [
+      { label: 'Template roles', items: [
+        { id: 'hr',       email: 'hr@unity-software.online',       name: 'Amara Njoroge', title: 'HR Manager',      avatar: 'avatar_hr.png' },
+        { id: 'hiring',   email: 'hiring@unity-software.online',   name: 'Daniel Ochieng', title: 'Hiring Manager', avatar: 'avatar_hiring.png' },
+        { id: 'director', email: 'director@unity-software.online', name: 'Grace Wambui',   title: 'Director',       avatar: 'avatar_director.png' }
+      ]},
+      { label: 'Authentication', items: [
+        { id: 'welcome',       email: 'welcome@unity-software.online',       name: 'Unity Software', title: 'Welcome Team' },
+        { id: 'security',      email: 'security@unity-software.online',      name: 'Unity Software', title: 'Security Team' },
+        { id: 'notifications', email: 'notifications@unity-software.online', name: 'Unity Software', title: 'Notifications' }
+      ]},
+      { label: 'Customer Support', items: [
+        { id: 'support',         email: 'support@unity-software.online',         name: 'Unity Software', title: 'Support Team' },
+        { id: 'customerservice', email: 'customerservice@unity-software.online', name: 'Unity Software', title: 'Customer Service' },
+        { id: 'help',            email: 'help@unity-software.online',            name: 'Unity Software', title: 'Help Desk' },
+        { id: 'contact',         email: 'contact@unity-software.online',         name: 'Unity Software', title: 'Contact' }
+      ]},
+      { label: 'Finance', items: [
+        { id: 'billing',  email: 'billing@unity-software.online',  name: 'Unity Software', title: 'Billing' },
+        { id: 'accounts', email: 'accounts@unity-software.online', name: 'Unity Software', title: 'Accounts' },
+        { id: 'payments', email: 'payments@unity-software.online', name: 'Unity Software', title: 'Payments' },
+        { id: 'invoices', email: 'invoices@unity-software.online', name: 'Unity Software', title: 'Invoices' }
+      ]},
+      { label: 'Business', items: [
+        { id: 'sales',    email: 'sales@unity-software.online',    name: 'Unity Software', title: 'Sales' },
+        { id: 'orders',   email: 'orders@unity-software.online',   name: 'Unity Software', title: 'Orders' },
+        { id: 'services', email: 'services@unity-software.online', name: 'Unity Software', title: 'Services' },
+        { id: 'team',     email: 'team@unity-software.online',     name: 'Unity Software', title: 'Team' }
+      ]},
+      { label: 'General', items: [
+        { id: 'hello',     email: 'hello@unity-software.online',     name: 'Unity Software', title: 'Unity Software' },
+        { id: 'info',      email: 'info@unity-software.online',      name: 'Unity Software', title: 'Info' },
+        { id: 'admin',     email: 'admin@unity-software.online',     name: 'Unity Software', title: 'Admin' },
+        { id: 'updates',   email: 'updates@unity-software.online',   name: 'Unity Software', title: 'Updates' },
+        { id: 'marketing', email: 'marketing@unity-software.online', name: 'Unity Software', title: 'Marketing' }
+      ]}
+    ];
+    const IDENTITIES = {};
+    IDENTITY_GROUPS.forEach((g) => g.items.forEach((it) => {
+      IDENTITIES[it.id] = { ...it, avatar: it.avatar || 'avatar_hr.png' };
+    }));
+
+    function populateSenderSelects() {
+      const fromSel = $('fromSel');
+      fromSel.innerHTML = '<option value="default" selected>Template default</option>';
+      IDENTITY_GROUPS.forEach((g) => {
+        const og = document.createElement('optgroup');
+        og.label = g.label;
+        g.items.forEach((it) => {
+          const o = document.createElement('option');
+          o.value = it.email;
+          o.textContent = it.email;
+          og.appendChild(o);
+        });
+        fromSel.appendChild(og);
+      });
+      const idSel = $('identitySel');
+      idSel.innerHTML = '';
+      IDENTITY_GROUPS.forEach((g) => {
+        const og = document.createElement('optgroup');
+        og.label = g.label;
+        g.items.forEach((it) => {
+          const o = document.createElement('option');
+          o.value = it.id;
+          o.textContent = it.name + ' — ' + it.title + ' (' + it.email.split('@')[0] + '@)';
+          og.appendChild(o);
+        });
+        idSel.appendChild(og);
+      });
+    }
+    populateSenderSelects();
     function toggleMode() {
       const mode = document.querySelector('input[name="mode"]:checked').value;
       $('templateRow').style.display = mode === 'template' ? '' : 'none';
