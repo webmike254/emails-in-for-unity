@@ -72,26 +72,32 @@ function toPlainHtml(text) {
 
 async function deliver(inbound) {
   const forwardTo = clean(process.env.INBOUND_FORWARD_TO).split(',')[0];
-  if (!forwardTo || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(forwardTo)) return;
+  if (!forwardTo || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(forwardTo)) {
+    return { sent: false, error: 'INBOUND_FORWARD_TO not set' };
+  }
+  try {
+    const subject = clean(inbound.subject) || '(no subject)';
+    const text =
+      `From: ${inbound.from}\n` +
+      `To: ${inbound.to}\n` +
+      `Date: ${inbound.date || 'n/a'}\n` +
+      `-------------------------------\n\n` +
+      (inbound.text || '(no text body)');
 
-  const subject = clean(inbound.subject) || '(no subject)';
-  const text =
-    `From: ${inbound.from}\n` +
-    `To: ${inbound.to}\n` +
-    `Date: ${inbound.date || 'n/a'}\n` +
-    `-------------------------------\n\n` +
-    (inbound.text || '(no text body)');
+    const html = inbound.html ||
+      toPlainHtml(`From: ${inbound.from}\nTo: ${inbound.to}\n\n${inbound.text || ''}`);
 
-  const html = inbound.html ||
-    toPlainHtml(`From: ${inbound.from}\nTo: ${inbound.to}\n\n${inbound.text || ''}`);
-
-  await sendMail({
-    from: { email: 'hello@unity-software.online', name: 'Unity Software Inbound' },
-    to: { email: forwardTo, name: forwardTo },
-    subject: `[Inbound] ${subject}`,
-    text,
-    html
-  });
+    const result = await sendMail({
+      from: { email: 'hello@unity-software.online', name: 'Unity Software Inbound' },
+      to: { email: forwardTo, name: forwardTo },
+      subject: `[Inbound] ${subject}`,
+      text,
+      html
+    });
+    return { sent: true, messageId: result.messageId };
+  } catch (e) {
+    return { sent: false, error: e.message };
+  }
 }
 
 export default async function handler(req, res) {
@@ -127,12 +133,7 @@ export default async function handler(req, res) {
   };
 
   const stored = await storeInbox(inbound, attachments);
-
-  try {
-    await deliver(inbound);
-  } catch {
-    // Forwarding is best-effort; never fail the webhook on it.
-  }
+  const forward = await deliver(inbound);
 
   return json(res, 200, {
     ok: true,
@@ -140,6 +141,8 @@ export default async function handler(req, res) {
     subject: inbound.subject || null,
     stored: stored.stored,
     inboxId: stored.id || null,
-    storeError: stored.stored ? undefined : stored.reason
+    storeError: stored.stored ? undefined : stored.reason,
+    forwardedToGmail: forward.sent,
+    forwardError: forward.sent ? undefined : forward.error
   });
 }
