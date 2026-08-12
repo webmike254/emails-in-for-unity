@@ -35,12 +35,12 @@ export const TEMPLATE_HR = `<!DOCTYPE html>
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f4f4f5;">
     <tr>
       <td align="center" style="padding: 32px 16px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
 
           <!-- Letterhead -->
           <tr>
             <td style="padding:0; line-height:0;">
-              <img src="header.jpg" alt="Unity Software" width="600" style="display:block; width:100%; max-width:600px; height:auto;" />
+              <img src="header.jpg" alt="Unity Software" width="680" style="display:block; width:100%; max-width:680px; height:auto;" />
             </td>
           </tr>
 
@@ -104,7 +104,7 @@ export const TEMPLATE_HR = `<!DOCTYPE html>
           </tr>
         </table>
 
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px;">
           <tr>
             <td style="padding:24px 16px; text-align:center;">
               <p style="margin:0; font-size:11px; line-height:1.5; color:#9ca3af;">
@@ -153,12 +153,12 @@ export const TEMPLATE_HIRING = `<!DOCTYPE html>
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f4f4f5;">
     <tr>
       <td align="center" style="padding: 32px 16px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
 
           <!-- Letterhead -->
           <tr>
             <td style="padding:0; line-height:0;">
-              <img src="header.jpg" alt="Unity Software" width="600" style="display:block; width:100%; max-width:600px; height:auto;" />
+              <img src="header.jpg" alt="Unity Software" width="680" style="display:block; width:100%; max-width:680px; height:auto;" />
             </td>
           </tr>
 
@@ -222,7 +222,7 @@ export const TEMPLATE_HIRING = `<!DOCTYPE html>
           </tr>
         </table>
 
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px;">
           <tr>
             <td style="padding:24px 16px; text-align:center;">
               <p style="margin:0; font-size:11px; line-height:1.5; color:#9ca3af;">
@@ -271,12 +271,12 @@ export const TEMPLATE_DIRECTOR = `<!DOCTYPE html>
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f4f4f5;">
     <tr>
       <td align="center" style="padding: 32px 16px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
 
           <!-- Letterhead -->
           <tr>
             <td style="padding:0; line-height:0;">
-              <img src="header.jpg" alt="Unity Software" width="600" style="display:block; width:100%; max-width:600px; height:auto;" />
+              <img src="header.jpg" alt="Unity Software" width="680" style="display:block; width:100%; max-width:680px; height:auto;" />
             </td>
           </tr>
 
@@ -340,7 +340,7 @@ export const TEMPLATE_DIRECTOR = `<!DOCTYPE html>
           </tr>
         </table>
 
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px;">
           <tr>
             <td style="padding:24px 16px; text-align:center;">
               <p style="margin:0; font-size:11px; line-height:1.5; color:#9ca3af;">
@@ -415,12 +415,12 @@ export const TEMPLATE_GENERIC = `<!DOCTYPE html>
       <td align="center" style="padding: 32px 16px;">
 
         <!-- Email container -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);" class="card">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);" class="card">
 
           <!-- ===== HEADER / LETTERHEAD ===== -->
           <tr>
             <td style="padding:0; line-height:0;">
-              <img src="header.jpg" alt="Unity Software — Liceria & Co." width="600" style="display:block; width:100%; max-width:600px; height:auto;" />
+              <img src="header.jpg" alt="Unity Software — Liceria & Co." width="680" style="display:block; width:100%; max-width:680px; height:auto;" />
             </td>
           </tr>
 
@@ -528,7 +528,7 @@ export const TEMPLATE_GENERIC = `<!DOCTYPE html>
         <!-- /Email container -->
 
         <!-- Legal / unsubscribe note (for transactional this can be minimal) -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px;">
           <tr>
             <td style="padding:24px 16px; text-align:center;">
               <p style="margin:0; font-size:11px; line-height:1.5; color:#9ca3af;">
@@ -583,12 +583,12 @@ export const TEMPLATE_CUSTOM = `<!DOCTYPE html>
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#f4f4f5;" class="email-bg">
     <tr>
       <td align="center" style="padding: 32px 16px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);" class="card">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:680px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.06);" class="card">
 
           <!-- Letterhead -->
           <tr>
             <td style="padding:0; line-height:0;">
-              <img src="header.jpg" alt="Unity Software — Liceria &amp; Co." width="600" style="display:block; width:100%; max-width:600px; height:auto;" />
+              <img src="header.jpg" alt="Unity Software — Liceria &amp; Co." width="680" style="display:block; width:100%; max-width:680px; height:auto;" />
             </td>
           </tr>
 

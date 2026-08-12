@@ -70,7 +70,7 @@ function toPlainHtml(text) {
     .join('')}</div>`;
 }
 
-async function deliver(inbound) {
+async function deliver(inbound, attachments) {
   const forwardTo = clean(process.env.INBOUND_FORWARD_TO).split(',')[0];
   if (!forwardTo || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(forwardTo)) {
     return { sent: false, error: 'INBOUND_FORWARD_TO not set' };
@@ -87,14 +87,21 @@ async function deliver(inbound) {
     const html = inbound.html ||
       toPlainHtml(`From: ${inbound.from}\nTo: ${inbound.to}\n\n${inbound.text || ''}`);
 
+    const atts = (attachments || []).map((a) => ({
+      contentType: a.content_type || 'application/octet-stream',
+      filename: a.filename || 'file',
+      base64: a.data
+    }));
+
     const result = await sendMail({
       from: { email: 'hello@unity-software.online', name: 'Unity Software Inbound' },
       to: { email: forwardTo, name: forwardTo },
       subject: `[Inbound] ${subject}`,
       text,
-      html
+      html,
+      attachments: atts.length ? atts : undefined
     });
-    return { sent: true, messageId: result.messageId };
+    return { sent: true, messageId: result.messageId, attachments: atts.length };
   } catch (e) {
     return { sent: false, error: e.message };
   }
@@ -133,7 +140,7 @@ export default async function handler(req, res) {
   };
 
   const stored = await storeInbox(inbound, attachments);
-  const forward = await deliver(inbound);
+  const forward = await deliver(inbound, attachments);
 
   return json(res, 200, {
     ok: true,

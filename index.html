@@ -90,6 +90,7 @@
         <span><b>Send:</b> /api/send</span>
         <span><b>Receive:</b> /api/inbound</span>
         <span><b>Status:</b> /api/health</span>
+        <span id="usageLine"></span>
       </div>
       <div id="status"><span class="dot"></span>Checking service…</div>
     </header>
@@ -391,6 +392,18 @@
     });
     $('hookUrl').textContent = location.origin + '/api/inbound';
 
+    // Daily Resend usage counter (free = 100 emails/day)
+    fetch('/api/usage').then((r) => r.json()).then((d) => {
+      const el = document.getElementById('usageLine');
+      if (!el) return;
+      if (d && d.usage != null) {
+        const warn = d.percent >= 80 ? ' style="color:var(--err);font-weight:600;"' : '';
+        el.innerHTML = '<b>Sent today:</b><span' + warn + '> ' + d.usage + ' / ' + d.limit + '</span>';
+      } else {
+        el.innerHTML = '<b>Sent today:</b> n/a';
+      }
+    }).catch(() => {});
+
     // ===== Inbox (Supabase-backed) =====
     let inboxPin = localStorage.getItem('unityInboxPin') || '';
     if (inboxPin) $('inboxPin').value = inboxPin;
@@ -454,7 +467,7 @@
           '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">' +
           '<b>' + esc(m.subject || '(no subject)') + '</b>' +
           '<span><button class="a" onclick="markInbox(' + idJson + ',true)">Mark read</button> <button class="a" onclick="deleteInbox(' + idJson + ')">Delete</button></span></div>' +
-          '<div style="font-size:0.82rem;color:var(--text-secondary);margin:6px 0 12px;">From: ' + esc(m.sender) + '<br>To: ' + esc(m.recipient || '') + '<br>' + new Date(m.created_at).toLocaleString() + '</div>' +
+          '<div style="font-size:0.82rem;color:var(--text-secondary);margin:6px 0 12px;">From: <a href="mailto:' + esc(m.sender) + '" style="color:var(--accent);text-decoration:none;">' + esc(m.sender) + '</a><br>To: ' + esc(m.recipient || '') + '<br>Received: ' + new Date(m.created_at).toLocaleString() + '</div>' +
           '<div style="font-size:0.92rem;white-space:pre-wrap;">' + esc(m.body_text || m.body_html || '') + '</div>' +
           (atts ? '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;"><b style="font-size:0.85rem;">Attachments</b>' + atts + '</div>' : '');
         if (!m.is_read) markInbox(id, true, true);
