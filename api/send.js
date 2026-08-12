@@ -17,6 +17,7 @@
 import { readBody, json, clean } from './_lib/http.mjs';
 import { sendMail } from './_lib/sender.mjs';
 import { getTemplate, buildTemplate } from './_lib/templates.mjs';
+import { supabaseConfigured, sbRequest } from './_lib/supabase.mjs';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -102,6 +103,21 @@ export default async function handler(req, res) {
 
   try {
     const result = await sendMail({ from, to: { email: to, name: toName }, subject, html, text, attachments });
+
+    // Best-effort: log the send for the "Sent today" counter (Supabase).
+    if (supabaseConfigured()) {
+      sbRequest('POST', '/sends', {
+        body: {
+          sender: from.email,
+          recipient: to,
+          template: templateId,
+          subject: subject || null,
+          provider: result.provider,
+          message_id: result.messageId || null
+        }
+      }).catch(() => {});
+    }
+
     return json(res, 200, {
       success: true,
       to,

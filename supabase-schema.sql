@@ -22,3 +22,19 @@ alter table public.emails enable row level security;
 
 create index if not exists emails_created_idx on public.emails (created_at desc);
 create index if not exists emails_sender_idx  on public.emails (sender);
+
+-- Daily sent-mail log (powers the "Sent today: X / 100" counter).
+create table if not exists public.sends (
+  id            uuid primary key default gen_random_uuid(),
+  sender        text not null default '',
+  recipient     text,
+  template      text,
+  subject       text,
+  provider      text,
+  message_id    text,
+  created_at    timestamptz not null default now()
+);
+
+alter table public.sends enable row level security;
+
+create index if not exists sends_created_idx on public.sends (created_at desc);
