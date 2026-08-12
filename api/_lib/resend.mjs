@@ -25,7 +25,7 @@ export async function sendMail(opts) {
 
   const payload = {
     from: `${opts.from.name || 'Unity Software'} <${opts.from.email}>`,
-    to: [opts.to.email],
+    to: (Array.isArray(opts.to) ? opts.to : [opts.to]).map((t) => t.email || t),
     subject: opts.subject || 'Hello from Unity Software',
     html: opts.html || ''
   };

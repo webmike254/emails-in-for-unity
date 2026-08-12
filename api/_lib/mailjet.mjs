@@ -31,7 +31,7 @@ export async function sendMail(opts) {
 
   const message = {
     From: { Email: opts.from.email, Name: opts.from.name || 'Unity Software' },
-    To: [{ Email: opts.to.email, Name: opts.to.name || opts.to.email }],
+    To: (Array.isArray(opts.to) ? opts.to : [opts.to]).map((t) => ({ Email: t.email, Name: t.name || t.email })),
     Subject: opts.subject || 'Hello from Unity Software',
     HTMLPart: opts.html || '',
     CustomID: `unity-${Date.now()}`

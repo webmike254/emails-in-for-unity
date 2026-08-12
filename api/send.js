@@ -33,11 +33,13 @@ export default async function handler(req, res) {
     return json(res, 400, { error: 'Body must be valid JSON.' });
   }
 
-  const to = clean(data.to);
-  if (!to || !EMAIL_RE.test(to)) {
-    return json(res, 400, { error: 'A valid "to" email address is required.' });
+  const nameOf = (email) => email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const toList = [...new Set(clean(data.to).split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean))];
+  if (!toList.length || !toList.every((e) => EMAIL_RE.test(e))) {
+    return json(res, 400, { error: 'Provide at least one valid "to" email (comma-separated for multiple).' });
   }
-  const toName = clean(data.toName) || to.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const toName = clean(data.toName) || nameOf(toList[0] || '');
+  const toArray = toList.map((email) => ({ email, name: nameOf(email) }));
 
   const wantsCustom = typeof data.body === 'string' && data.body.trim().length > 0;
   const templateId = clean(data.template, wantsCustom ? 'custom' : 'generic');
@@ -86,14 +88,14 @@ export default async function handler(req, res) {
     : undefined;
 
   try {
-    const result = await sendMail({ from, to: { email: to, name: toName }, subject, html, text, attachments });
+    const result = await sendMail({ from, to: toArray, subject, html, text, attachments });
 
     // Best-effort: log the send for the "Sent today" counter (Supabase).
     if (supabaseConfigured()) {
       sbRequest('POST', '/sends', {
         body: {
           sender: from.email,
-          recipient: to,
+          recipient: toList.join(', '),
           template: templateId,
           subject: subject || null,
           provider: result.provider,
@@ -104,7 +106,8 @@ export default async function handler(req, res) {
 
     return json(res, 200, {
       success: true,
-      to,
+      to: toList.join(', '),
+      toCount: toList.length,
       template: templateId,
       from: from.email,
       subject,

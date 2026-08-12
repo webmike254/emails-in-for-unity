@@ -175,8 +175,8 @@
           </div>
           <div class="row">
             <div>
-              <label for="to">To</label>
-              <input id="to" type="email" placeholder="name@example.com">
+              <label for="to">To <span style="font-weight:400; color:var(--text-secondary);">(comma-separated — send to many at once)</span></label>
+              <textarea id="to" rows="3" style="width:100%; border:1px solid #d4d4d8; border-radius:10px; padding:10px 12px; font:inherit; font-size:0.9375rem;" placeholder="email1@example.com, email2@example.com, email3@example.com"></textarea>
             </div>
             <div>
               <label for="toName">Recipient name</label>
@@ -422,7 +422,7 @@
           body: JSON.stringify(payload)
         });
         const d = await r.json();
-        if (r.ok) show('result', 'ok', 'Sent to <b>' + d.to + '</b> from ' + d.from + ' via ' + d.provider + ' — ID: ' + d.messageId);
+        if (r.ok) show('result', 'ok', 'Sent to <b>' + d.toCount + ' recipient(s)</b> from ' + d.from + ' via ' + d.provider + ' — Resend ID: ' + d.messageId);
         else show('result', 'err', 'Error ' + r.status + ': ' + d.error);
       } catch (e) {
         show('result', 'err', 'Request failed: ' + e.message);
