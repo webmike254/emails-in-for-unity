@@ -18,25 +18,9 @@ import { readBody, json, clean } from './_lib/http.mjs';
 import { sendMail } from './_lib/sender.mjs';
 import { getTemplate, buildTemplate } from './_lib/templates.mjs';
 import { supabaseConfigured, sbRequest } from './_lib/supabase.mjs';
+import { textToParagraphs } from './_lib/text.mjs';
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
-/** Converts user plain-text into safe HTML paragraphs for the custom template. */
-function textToParagraphs(value) {
-  const html = String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map(
-      (line) =>
-        `<p style="margin:0 0 16px 0; font-size:16px; line-height:1.65; color:#374151;" class="text-primary">${line}</p>`
-    )
-    .join('\n');
-  return html || '<p style="margin:0; font-size:16px; line-height:1.65; color:#374151;" class="text-primary"></p>';
-}
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
