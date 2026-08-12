@@ -34,7 +34,11 @@ export default async function handler(req, res) {
   }
 
   const nameOf = (email) => email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  const toList = [...new Set(clean(data.to).split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean))];
+  const extract = (raw) => {
+    const m = /<([^<>]+)>/.exec(String(raw || '').trim());
+    return m ? m[1].trim() : String(raw || '').trim();
+  };
+  const toList = [...new Set(clean(data.to).split(/[,;]+/).map(extract).filter(Boolean))];
   if (!toList.length || !toList.every((e) => EMAIL_RE.test(e))) {
     return json(res, 400, { error: 'Provide at least one valid "to" email (comma-separated for multiple).' });
   }
