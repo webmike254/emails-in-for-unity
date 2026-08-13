@@ -41,21 +41,8 @@ function isRetryableLimitError(message) {
 
 export async function sendMail(opts) {
   const primary = activeProvider();
-  // Fallback chain. Mailjet is excluded unless it is the explicit primary.
-  let order;
-  if (primary === 'mailjet') order = ['mailjet', 'resend', 'mailersend'];
-  else if (primary === 'resend') order = ['resend', 'mailersend'];
-  else order = ['mailersend', 'resend'];
-
-  let lastError = null;
-  for (const name of order) {
-    if (!isConfiguredFor(name)) continue;
-    try {
-      return await deliver(name, opts);
-    } catch (err) {
-      lastError = err;
-      if (!isRetryableLimitError(err.message)) break;
-    }
-  }
-  throw lastError || new Error('No email provider available.');
+  // No silent fallback: the chosen provider is used directly. Fallbacks can mask
+  // real errors (e.g. a trial account's unique-recipient cap) and are not reliable.
+  if (!isConfiguredFor(primary)) throw new Error('No email provider available.');
+  return await deliver(primary, opts);
 }
